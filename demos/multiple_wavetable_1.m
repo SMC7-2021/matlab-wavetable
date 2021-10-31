@@ -1,4 +1,4 @@
-%% Multiple wavetable.
+%% Multiple wavetable synthesis
 
 clear; close all;
 

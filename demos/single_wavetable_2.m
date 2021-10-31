@@ -1,4 +1,4 @@
-%% Single wavetable
+%% Single wavetable synthesis
 % Variable frequency via interpolation.
 % Note that, especially for high frequencies, rounding discrepancies introduce
 % interpolation noise into the output signal.

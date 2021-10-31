@@ -1,6 +1,6 @@
 clear; close all;
 
-%% Single sawtooth wavetable
+%% Single sawtooth wavetable synthesis
 % Output frequency can only be varied by changing:
 % - the length of the wavetable;
 % - the sample rate;

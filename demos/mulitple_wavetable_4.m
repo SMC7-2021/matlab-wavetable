@@ -1,14 +1,12 @@
 %% Multiple wavetable synthesis
-% Now with more wavetables.
-% Only works for fixed F0.
+% Supports frequency envelopes.
+% Demonstrates interpolation noise.
 
 clear; close all;
 
 % Constants
 % Sample rate.
 Fs = 44100;
-% Output frequency.
-F0 = 194.6;
 % Output duration.
 outDurationS = 9;
 % Output amplitude.
@@ -18,30 +16,20 @@ wtLength = 2^9;
 % Max output samples to plot.
 maxOutPlot = 1000;
 
-% Load some audio samples.
-x1 = audioread('./wavetables/vox_wt.wav');
-x2 = audioread('./wavetables/violin_wt.wav');
-x3 = audioread('./wavetables/drum_wt.wav');
+% Load an audio sample.
+x = audioread('./wavetables/drum_wt.wav');
 
 % Create an array of wavetables.
 wavetables = {
     % A sampled wavetable.
-    resample(x1, wtLength, length(x1));
+    resample(x, wtLength, length(x));
     % A sine wavetable
     sin(linspace(0, 2 * pi, wtLength)');
-    % Another sampled wavetable.
-    resample(x2, wtLength, length(x2));
     % A square wavetable.
-    square(linspace(0, (2 * pi) - 1/wtLength, wtLength)');
-    % Another sampled wavetable.
-    resample(x3, wtLength, length(x3));
-    % A sawtooth wavetable.
-    sawtooth(linspace(0, (2 * pi) - 1/wtLength, wtLength)')
+    square(linspace(0, (2 * pi) - 1/wtLength, wtLength)')
 };
-% Shuffle the wavetables for a laugh.
-wavetables = wavetables(randperm(length(wavetables)));
 
-% Plot them all.
+% Plot them.
 figure('Name', 'Wavetables', 'Position', [100, 500, 600, 900]);
 
 for i=1:length(wavetables)
@@ -59,16 +47,18 @@ fig2 = figure('Name', 'Wavetable transition', 'Position', [1000, 500, 600, 500])
 % Create output placeholder.
 y = zeros(Fs * outDurationS, 1);
 
-% Calculate the number of samples per period of the wavetable to produce the
-% desired frequency.
-sampsPerPeriod = Fs / F0;
-wtStepsPerSample = wtLength / sampsPerPeriod;
+% Create a vector of output frequencies.
+F0 = linspace(50, 500, Fs * outDurationS);
 
 % Placeholder for the transitional wavetable samples.
 wt = zeros(2, 1);
 
 % Transition linearly between the wavetables while writing to the output vector.
-for n=1:(Fs * outDurationS)    
+for n=1:(Fs * outDurationS)
+    % Calculate the number of samples per period of the wavetable to produce the
+    % current frequency.
+    sampsPerPeriod = Fs / F0(n);
+    wtStepsPerSample = wtLength / sampsPerPeriod;
     % Calculate the fractional sample index in the wavetable.
     wtSampIndex = mod(wtStepsPerSample * (n - 1), wtLength) + 1;
     % Calculate the magnitudes for samples either side of the fractional index.
@@ -104,6 +94,9 @@ for n=1:(Fs * outDurationS)
     % will exceed the length of the wavetable array; so check for this.
     if nextWtIndex > length(wavetables)
         nextWtIndex = length(wavetables) - 1;
+    end
+    if nextWtIndex == 0
+        nextWtIndex = 1;
     end
     
     % Calculate the transitional wavetable samples.
@@ -147,7 +140,7 @@ figure( ...
     ylim([-1, 1]), ...
     ylabel('amp.'), ...
     xlabel('time (ms)'), ...
-    % Plot spectrogram.
+    % Plot spectrogram. Note the interpolation artifacts.
     subplot(313), ...
     spectrogram(y, 512, 64, 512, Fs, 'yaxis'), ...
     ylim([0, 10]);

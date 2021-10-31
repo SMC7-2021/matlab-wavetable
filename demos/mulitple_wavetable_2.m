@@ -1,4 +1,4 @@
-%% Multiple wavetable.
+%% Multiple wavetable synthesis
 % Demonstrates the case of loading wavetable data from audio files.
 
 clear; close all;
