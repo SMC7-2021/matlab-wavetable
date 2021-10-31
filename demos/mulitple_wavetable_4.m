@@ -48,20 +48,22 @@ fig2 = figure('Name', 'Wavetable transition', 'Position', [1000, 500, 600, 500])
 y = zeros(Fs * outDurationS, 1);
 
 % Create a vector of output frequencies.
-F0 = linspace(50, 500, Fs * outDurationS);
+F0 = linspace(66, 527, Fs * outDurationS)';
+% F0 = linspace(150, 350, Fs * outDurationS)' + sin(2 * pi * 1.5 * linspace(0, outDurationS, outDurationS * Fs)') .* ...
+%     linspace(0, 30, Fs * outDurationS)';
 
 % Placeholder for the transitional wavetable samples.
 wt = zeros(2, 1);
+% Initialize the wavetable sample index.
+wtSampIndex = 1;
+% (Set up a rate-limiter for the wavetable transition plot.)
+transitionPlotIndex = 0;
+transitionPlotRateLimit = 10;
 
 % Transition linearly between the wavetables while writing to the output vector.
 for n=1:(Fs * outDurationS)
-    % Calculate the number of samples per period of the wavetable to produce the
-    % current frequency.
-    sampsPerPeriod = Fs / F0(n);
-    wtStepsPerSample = wtLength / sampsPerPeriod;
-    % Calculate the fractional sample index in the wavetable.
-    wtSampIndex = mod(wtStepsPerSample * (n - 1), wtLength) + 1;
-    % Calculate the magnitudes for samples either side of the fractional index.
+    % Calculate the magnitudes for samples either side of the current 
+    % (fractional) wavetable sample index.
     magnitude2 = rem(wtSampIndex, 1);
     magnitude1 = 1 - magnitude2;
     
@@ -111,14 +113,27 @@ for n=1:(Fs * outDurationS)
         magnitude2 * wt(2) ...
     );
 
-    % Make a cool plot of the transition (slow for factors of Fs; doesn't work
-    % well for large F0).
-    if mod(n, sampsPerPeriod) < 0.1
-        figure(fig2),
-        plot(y(n - floor(sampsPerPeriod) + 1: n), 'k.-'), ...
-            ylim([-1, 1]), ...
-            title('Wavetable transition'), ...
-            drawnow limitrate;
+    % Calculate the number of samples per period of the wavetable to produce the
+    % current frequency.
+    sampsPerPeriod = Fs / F0(n);
+    wtStepsPerSample = wtLength / sampsPerPeriod;
+    
+    % (Previous index just used for plotting.)
+    prevWtSampIndex = wtSampIndex;
+    
+    % Upadate the wavetable sample index for the next iteration.
+    wtSampIndex = mod(wtSampIndex + wtStepsPerSample, wtLength);
+
+    % Make a cool plot of the wavetable transition.
+    if wtSampIndex < prevWtSampIndex
+        if mod(transitionPlotIndex, transitionPlotRateLimit) == 0
+            figure(fig2),
+            plot(y(n - floor(sampsPerPeriod) + 1: n), 'k.-'), ...
+                ylim([-1, 1]), ...
+                title('Wavetable transition'), ...
+                drawnow limitrate;
+        end
+        transitionPlotIndex = transitionPlotIndex + 1;
     end
 end
 
@@ -144,3 +159,6 @@ figure( ...
     subplot(313), ...
     spectrogram(y, 512, 64, 512, Fs, 'yaxis'), ...
     ylim([0, 10]);
+
+figure(), ...
+    freqz(y, 1, [], Fs);
