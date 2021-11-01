@@ -1,6 +1,6 @@
 %% Multiple wavetable synthesis
 % Supports frequency envelopes.
-% Demonstrates interpolation noise.
+% Demonstrates aliasing distortion.
 
 clear; close all;
 
@@ -23,8 +23,8 @@ x = audioread('./wavetables/drum_wt.wav');
 wavetables = {
     % A sampled wavetable.
     resample(x, wtLength, length(x));
-    % A sine wavetable
-    sin(linspace(0, 2 * pi, wtLength)');
+    % A sine wavetable.
+%     sin(linspace(0, 2 * pi, wtLength)');
     % A square wavetable.
     square(linspace(0, (2 * pi) - 1/wtLength, wtLength)')
 };
@@ -48,7 +48,7 @@ fig2 = figure('Name', 'Wavetable transition', 'Position', [1000, 500, 600, 500])
 y = zeros(Fs * outDurationS, 1);
 
 % Create a vector of output frequencies.
-F0 = linspace(66, 527, Fs * outDurationS)';
+F0 = linspace(66, 2027, Fs * outDurationS)';
 % F0 = linspace(150, 350, Fs * outDurationS)' + sin(2 * pi * 1.5 * linspace(0, outDurationS, outDurationS * Fs)') .* ...
 %     linspace(0, 30, Fs * outDurationS)';
 
@@ -58,7 +58,7 @@ wt = zeros(2, 1);
 wtSampIndex = 1;
 % (Set up a rate-limiter for the wavetable transition plot.)
 transitionPlotIndex = 0;
-transitionPlotRateLimit = 10;
+transitionPlotRateLimit = 20;
 
 % Transition linearly between the wavetables while writing to the output vector.
 for n=1:(Fs * outDurationS)
@@ -125,7 +125,7 @@ for n=1:(Fs * outDurationS)
     wtSampIndex = mod(wtSampIndex + wtStepsPerSample, wtLength);
 
     % Make a cool plot of the wavetable transition.
-    if wtSampIndex < prevWtSampIndex
+    if wtSampIndex < prevWtSampIndex && n > sampsPerPeriod
         if mod(transitionPlotIndex, transitionPlotRateLimit) == 0
             figure(fig2),
             plot(y(n - floor(sampsPerPeriod) + 1: n), 'k.-'), ...
