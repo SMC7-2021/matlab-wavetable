@@ -18,8 +18,8 @@ wtLength = 2^9;
 maxOutPlot = 1000;
 
 % Load some audio into wavetables.
-x1 = audioread('./vox_wt.wav');
-x2 = audioread('./violin_wt.wav');
+x1 = audioread('./wavetables/vox_wt.wav');
+x2 = audioread('./wavetables/violin_wt.wav');
 % Resample the wavetables to ensure that they're they contain the same number of
 % samples.
 wt1 = resample(x1, wtLength, length(x1));

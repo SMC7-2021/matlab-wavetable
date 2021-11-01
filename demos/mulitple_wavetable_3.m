@@ -1,6 +1,6 @@
 %% Multiple wavetable synthesis
 % Now with more wavetables.
-% Only works for fixed F0.
+% Only supports fixed F0.
 
 clear; close all;
 
@@ -66,11 +66,14 @@ wtStepsPerSample = wtLength / sampsPerPeriod;
 
 % Placeholder for the transitional wavetable samples.
 wt = zeros(2, 1);
+% Initialize the wavetable sample index.
+wtSampIndex = 1;
+% (Set up a rate-limiter for the wavetable transition plot.)
+transitionPlotIndex = 0;
+transitionPlotRateLimit = 8;
 
 % Transition linearly between the wavetables while writing to the output vector.
-for n=1:(Fs * outDurationS)    
-    % Calculate the fractional sample index in the wavetable.
-    wtSampIndex = mod(wtStepsPerSample * (n - 1), wtLength) + 1;
+for n=1:(Fs * outDurationS)
     % Calculate the magnitudes for samples either side of the fractional index.
     magnitude2 = rem(wtSampIndex, 1);
     magnitude1 = 1 - magnitude2;
@@ -117,15 +120,23 @@ for n=1:(Fs * outDurationS)
         magnitude1 * wt(1) + ...
         magnitude2 * wt(2) ...
     );
-
-    % Make a cool plot of the transition (slow for factors of Fs; doesn't work
-    % well for large F0).
-    if mod(n, sampsPerPeriod) < 0.1
-        figure(fig2),
-        plot(y(n - floor(sampsPerPeriod) + 1: n), 'k.-'), ...
-            ylim([-1, 1]), ...
-            title('Wavetable transition'), ...
-            drawnow limitrate;
+    
+    % (Previous index just used for plotting.)
+    prevWtSampIndex = wtSampIndex;
+    
+    % Upadate the wavetable sample index for the next iteration.
+    wtSampIndex = mod(wtSampIndex + wtStepsPerSample, wtLength);
+    
+    % Make a cool plot of the wavetable transition.
+    if wtSampIndex < prevWtSampIndex
+        if mod(transitionPlotIndex, transitionPlotRateLimit) == 0
+            figure(fig2),
+            plot(y(n - floor(sampsPerPeriod) + 1: n), 'k.-'), ...
+                ylim([-1, 1]), ...
+                title('Wavetable transition'), ...
+                drawnow limitrate;
+        end
+        transitionPlotIndex = transitionPlotIndex + 1;
     end
 end
 
