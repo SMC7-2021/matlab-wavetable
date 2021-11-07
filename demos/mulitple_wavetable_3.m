@@ -21,7 +21,7 @@ maxOutPlot = 1000;
 % Load some audio samples.
 x1 = audioread('./wavetables/vox_wt.wav');
 x2 = audioread('./wavetables/violin_wt.wav');
-x3 = audioread('./wavetables/drum_wt.wav');
+x3 = audioread('./wavetables/biffy_wt.wav');
 
 % Create an array of wavetables.
 wavetables = {

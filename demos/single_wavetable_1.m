@@ -13,7 +13,7 @@ outDurationS = 2;
 % Output amplitude.
 outAmp = .75;
 % Wavetable length.
-wtLength = 75;
+wtLength = 100;
 % Max output samples to plot.
 maxOutPlot = 2000;
 

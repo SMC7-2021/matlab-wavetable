@@ -1,19 +1,15 @@
 %% Single wavetable synthesis
-% Variable frequency via rounding/tructation.
-% Note that, especially for high frequencies, using the sawtooth/square
-% wavetable, aliasing artifacts are audible in the output.
+% Variable frequency via interpolation.
 
 clear; close all;
 
 % Constants.
-% Mode: 'round' or 'truncate'
-mode = 'round';
-% Wavetable type: 'sine', 'square', or 'saw'
+% Wavetable type: 'sine' or 'saw'
 wtType = 'sine';
 % Sample rate.
 Fs = 44100;
 % Output frequency.
-F0 = 501;
+F0 = 500;
 % Output duration.
 outDurationS = 2;
 % Output amplitude.
@@ -35,8 +31,6 @@ switch(wtType)
         wt = sin(linspace(0, 2 * pi, wtLength)');
     case 'saw'
         wt = linspace(-1, 1, wtLength);
-    case 'square'
-        wt = square(linspace(0, 2 * pi, wtLength)');
 end
 
 subplot(311), ...
@@ -59,25 +53,25 @@ wtStepsPerSample = wtLength / sampsPerPeriod;
 for n=1:(Fs * outDurationS)
     % Calculate the fractional sample index in the wavetable.
     wtIndex = mod(wtStepsPerSample * (n - 1), wtLength) + 1;
+    % Calculate the magnitudes for samples either side of the fractional index.
+    magnitude2 = rem(wtIndex, 1);
+    magnitude1 = 1 - magnitude2;
     
-    % Get the integer sample index as per the mode setting.
-    switch(mode)
-        case 'round'
-            wtIndex = round(wtIndex);
-        case 'truncate'
-            wtIndex = floor(wtIndex);
+    % Wrap the wavetable index as necessary.
+    prevIndex = floor(wtIndex);
+    nextIndex = ceil(wtIndex);
+    if prevIndex == 0
+        prevIndex = wtLength;
+    end
+    if nextIndex > wtLength
+        nextIndex = 1;
     end
     
-    % Wrap as necessary.
-    if wtIndex == 0
-        wtIndex = wtLength;
-    end
-    if wtIndex > wtLength
-        wtIndex = 1;
-    end
-   
-    % Compose the output.
-    y(n) = wt(wtIndex);
+    % Compose the output sample from summed weighted samples.
+    y(n) = outAmp * ( ...
+        magnitude1 * wt(prevIndex) + ...
+        magnitude2 * wt(nextIndex) ...
+    );
 end
 
 sound(y, Fs);
