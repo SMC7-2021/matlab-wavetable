@@ -1,5 +1,6 @@
 %% Single wavetable synthesis
-% Variable frequency via downsampling.
+% Variable frequency via downsampling only. Frequency precision limited by
+% reliance on integer downsampling factors.
 % Attempted anti-aliasing filter.
 
 clear; close all;
