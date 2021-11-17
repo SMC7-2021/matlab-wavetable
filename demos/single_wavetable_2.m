@@ -9,7 +9,7 @@ clear; close all;
 % Mode: 'round' or 'truncate'
 mode = 'round';
 % Wavetable type: 'sine', 'square', or 'saw'
-wtType = 'sine';
+wtType = 'square';
 % Sample rate.
 Fs = 44100;
 % Output frequency.
