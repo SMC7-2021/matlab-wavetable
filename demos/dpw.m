@@ -36,3 +36,7 @@ for order=0:2
     subplot(515), plot(t(5:end), x(5:end, 10)), title 'Differentiated';
     pause(1);
 end
+
+% Detail of the amplitude transition due to differentiation.
+figure;
+stem(t(175:225), x(175:225, 10)), title('Detail of differentiated signal');
