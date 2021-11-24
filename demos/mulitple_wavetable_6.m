@@ -30,7 +30,7 @@ wavetables = {
     % A sine wavetable.
     sin(linspace(0, 2 * pi, wtLength)');
     % A square wavetable.
-    square(linspace(0, (2 * pi) - 1/wtLength, wtLength)')
+    square(linspace(0, (2 * pi) - 1/wtLength, wtLength)');
     % Another sampled wavetable.
 %     resample(x2, wtLength, length(x2));
 };

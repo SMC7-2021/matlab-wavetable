@@ -3,7 +3,7 @@
 clear, close all;
 Fs = 44100; %init 1000
 duration = 1;
-F0 = 220; %init 5
+F0 = 2500; %init 5
 t = linspace(0, 1, Fs)';
 x = zeros(Fs*duration, 10);
 
@@ -57,18 +57,20 @@ subplot(212), plot(t(4:end), x(4:end, 7)), title 'scaled: improved'
 
 %plot spectrograms
 figure;
-spectrogram(x(:, 10), 100, 64, 100, Fs, 'yaxis');
+spectrogram(x(:, 10), 512, 64, 512, Fs, 'yaxis');
 title("after integration (before scaling)")
 figure;
-spectrogram(x(:, 1), 100, 64, 100, Fs, 'yaxis');
+spectrogram(x(:, 1), 512, 64, 512, Fs, 'yaxis');
 title("before integration")
 figure;
-spectrogram(x(:, 8), 100, 64, 100, Fs, 'yaxis');
+spectrogram(x(:, 8), 512, 64, 512, Fs, 'yaxis');
 title("8th matrix - basic scaling")
 figure;
-spectrogram(x(:, 8), 100, 64, 100, Fs, 'yaxis');
+spectrogram(x(:, 7), 512, 64, 512, Fs, 'yaxis');
 title("7th matrix - improved scaling")
 
 % Detail of the amplitude transition due to differentiation.
 figure;
 stem(t(175:225), x(175:225, 10)), title('Detail of differentiated signal');
+
+soundsc(x(:, 7), Fs);

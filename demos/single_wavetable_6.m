@@ -7,11 +7,11 @@ clear; close all;
 
 % Constants.
 % Wavetable type: 'sine', 'saw', 'square' or 'sample'
-wtType = 'sine';
+wtType = 'square';
 % Sampling rate.
 Fs = 44100;
 % Output frequency.
-F0 = midi2hz(80);
+F0 = midi2hz(60);
 % Output duration.
 outDurationS = 2;
 % Wavetable length.
@@ -156,3 +156,5 @@ subplot(5,2,10), ...
     spectrogram(y, 512, 64, 512, Fs, 'yaxis'), ...
     title('Spectrogram of output'), ...
     ylim([0, 22.05]);
+
+tfPlot(y, Fs, .01);
