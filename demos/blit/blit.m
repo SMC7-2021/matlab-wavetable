@@ -43,7 +43,7 @@ plot(H(1:128)), ...
 % -- by integrating, i.e. filtering -- is bandlimited too.
 
 %% Create a sawtooth wave from a band-limited impulse train
-y = makeBLIT(Fs, 512, 1.);
+y = makeBLIT(Fs, 434.76, 1.);
 % As above, integrate it to create a sawtooth wave
 avg = mean(y);
 if useCumsum
@@ -62,12 +62,11 @@ tfPlot(blitSaw, Fs, 1);
 soundsc(blitSaw, Fs);
 
 %% Leaky integrator
-% Works pretty well for some F0 (e.g. 1207), but not for others (e.g. 440)
-% I guess for generating a single wavetable, rather than a long-running signal,
-% it could be OK.
+% All-in-all, works pretty well for f0 based on complex ratios, not for round 
+% integers, e.g. 1200 Hz. (See second parameter to makeBLIT.)
 
 % Get DC component of BLIT
-newAvg = runningAvg(y, .9);
+newAvg = runningAvg(y, .99);
 mean(newAvg)
 % Integrate after removing the DC component
 saw = leakyIntegrator(y - newAvg);
