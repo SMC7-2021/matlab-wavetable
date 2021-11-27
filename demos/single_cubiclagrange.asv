@@ -105,7 +105,7 @@ for n=1:Fs * outDurationS
     x1 = readindex;
     x2 = readindex+1;
     x3 = readindex+2;
-    if (x0 == 0 || prevIndex > wtLength) 
+    if (x0 < wtLength) 
         x0 = wtLength; 
     end
     if (x2 > wtLength) 

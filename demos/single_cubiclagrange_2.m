@@ -6,37 +6,28 @@ clc; clear all;
 wtType = 'square';
 % Sampling rate.
 Fs = 44100;
-% Output frequency.
-F0 = 440;
-
-% F0 = linspace(66, 2027, Fs * outDurationS)';
 % Output duration.
-outDurationS = 0.04;
+outDurationS = 9;
+% Output frequency.
+%F0 = 440;
+
+ F0 = linspace(66, 7902, Fs * outDurationS)';
+
 % Wavetable length.
 wtLength = 2^9;
 % Target samlping rate, required to reproduce requested F0.
 targetFs = F0 * wtLength;
 targetWtLength = Fs / F0;
 
-wt = sin(linspace(0, 2 * pi, wtLength)');
+wt = square(linspace(0, 2 * pi, wtLength)');
 
 readindex = 1;
 
-% Calculate the number of samples per period of the wavetable to produce the
-% current frequency.
-sampsPerPeriod = Fs / F0;
-wtStepsPerSample = wtLength / sampsPerPeriod;
 
-wtStepsPerSample = floor(wtStepsPerSample);
 
 y = zeros((Fs * outDurationS)-1,1);
 
 %% Drop-sample interpolation
-
-wtStepsPerSample = wtLength / sampsPerPeriod;
-readindex = 1;
-y2 = zeros(Fs * outDurationS,1);
-
 for n=1:(Fs * outDurationS)-1
 
 
@@ -78,19 +69,22 @@ for n=1:Fs * outDurationS
 end
 
 %% cubic lagrange interpolation 
-wtStepsPerSample = wtLength / sampsPerPeriod;
+
 readindex = 1;
-y3 = zeros(Fs * outDurationS,1);
+y2 = zeros(Fs * outDurationS,1);
 
 for n=1:Fs * outDurationS
 
+    % Calculate the number of samples per period of the wavetable to produce the
+    % current frequency.
+    sampsPerPeriod = Fs / F0(n);
+    wtStepsPerSample = wtLength / sampsPerPeriod;
+
+   % wtStepsPerSample = floor(wtStepsPerSample);
+
     wtIndex = mod(wtStepsPerSample * (n - 1), wtLength) + 1;
 
-    
-
     alpha = rem(wtIndex, 1);
-
-    test(n)=alpha;
     
     if (alpha ~= 0)
 
@@ -105,15 +99,9 @@ for n=1:Fs * outDurationS
     x1 = readindex;
     x2 = readindex+1;
     x3 = readindex+2;
-    if (x0 == 0 || prevIndex > wtLength) 
-        x0 = wtLength; 
-    end
-    if (x2 > wtLength) 
-        x2 = x2 - wtLength; 
-    end
-    if (x3 > wtLength) 
-        x3 = x3 - wtLength; 
-    end
+    if (x0 < wtLength) x0 = wtLength; end
+    if (x2 > wtLength) x2 = x2 - wtLength; end
+    if (x3 > wtLength) x3 = x3 - wtLength; end
 
     if (alpha ~= 0)
     y3(n) = ...
@@ -124,7 +112,6 @@ for n=1:Fs * outDurationS
     else 
         y3(n) = wt(readindex);
     end
-   % y3 = y3';
 end
 
 %%
@@ -143,12 +130,9 @@ function tfPlot(x, Fs, varargin)
     figure('Position', [500, 300, 1000, 400]);
     
     subplot(121),...
-        
         plot(t, x),...
         grid on,...
         xlabel('Time (sec)');
-        
-        
     
     % Limit the x-range for the time plot if a limit (in seconds) has been 
     % specified.
