@@ -101,18 +101,18 @@ for n=1:Fs * outDurationS
     end
     
     readindex = floor(wtIndex);
-    x0 = readindex-1;
+    x0 = mod(readindex + wtLength - 1,wtLength); % Length
     x1 = readindex;
-    x2 = readindex+1;
-    x3 = readindex+2;
-    if (x0 < wtLength) 
+    x2 = mod(readindex +1, wtLength+1);
+    x3 = mod(readindex +2, wtLength+1);
+    if (x0 == 0 || prevIndex > wtLength) 
         x0 = wtLength; 
     end
-    if (x2 > wtLength) 
-        x2 = x2 - wtLength; 
+        if (x3 == 0) 
+        x3 = 1; 
     end
-    if (x3 > wtLength) 
-        x3 = x3 - wtLength; 
+    if (x2 == 0) 
+        x2 = 1; x3 = 2;
     end
 
     if (alpha ~= 0)

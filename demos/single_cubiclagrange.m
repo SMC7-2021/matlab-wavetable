@@ -2,6 +2,8 @@
 
 clc; clear all; 
 
+%%
+
 % Wavetable type: 'sine', 'saw', or 'square'
 wtType = 'square';
 % Sampling rate.
@@ -39,10 +41,11 @@ y2 = zeros(Fs * outDurationS,1);
 
 for n=1:(Fs * outDurationS)-1
 
-
-    y(n) = wt(readindex);
-
     readindex = mod(readindex + wtStepsPerSample,wtLength) +1 ;
+
+    y(n) = wt(floor(readindex));
+
+
 
 
 end
@@ -86,8 +89,6 @@ for n=1:Fs * outDurationS
 
     wtIndex = mod(wtStepsPerSample * (n - 1), wtLength) + 1;
 
-    
-
     alpha = rem(wtIndex, 1);
 
     test(n)=alpha;
@@ -101,18 +102,18 @@ for n=1:Fs * outDurationS
     end
     
     readindex = floor(wtIndex);
-    x0 = readindex-1;
+    x0 = mod(readindex + wtLength - 1,wtLength); % Length
     x1 = readindex;
-    x2 = readindex+1;
-    x3 = readindex+2;
-    if (x0 == 0 || prevIndex > wtLength) 
+    x2 = mod(readindex +1, wtLength+1);
+    x3 = mod(readindex +2, wtLength+1);
+    if (x0 == 0) 
         x0 = wtLength; 
     end
-    if (x2 > wtLength) 
-        x2 = x2 - wtLength; 
+        if (x3 == 0) 
+        x3 = 1; 
     end
-    if (x3 > wtLength) 
-        x3 = x3 - wtLength; 
+    if (x2 == 0) 
+        x2 = 1; x3 = 2;
     end
 
     if (alpha ~= 0)
@@ -129,8 +130,8 @@ end
 
 %%
 
-tfPlot(y,Fs,.01)
-tfPlot(y2,Fs,.01)
+%tfPlot(y,Fs,.01)
+%tfPlot(y2,Fs,.01)
 tfPlot(y3,Fs,.01)
 
 %%
