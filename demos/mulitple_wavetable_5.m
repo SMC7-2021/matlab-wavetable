@@ -26,13 +26,13 @@ x2 = audioread('./wavetables/violin_wt.wav');
 % Create an array of wavetables.
 wavetables = {
     % A sampled wavetable.
-    resample(x1, wtLength, length(x1));
+%     resample(x1, wtLength, length(x1));
     % Another sampled wavetable.
 %     resample(x2, wtLength, length(x2));
     % A sine wavetable.
     sin(linspace(0, 2 * pi, wtLength)');
     % A square wavetable.
-    square(linspace(0, (2 * pi) - 1/wtLength, wtLength)')
+%     square(linspace(0, (2 * pi) - 1/wtLength, wtLength)')
 };
 
 % Plot them.
@@ -57,6 +57,7 @@ y = zeros(Fs * outDurationS, 1);
 F0 = linspace(66, 2027, Fs * outDurationS)';
 % F0 = linspace(150, 350, Fs * outDurationS)' + sin(2 * pi * 1.5 * linspace(0, outDurationS, outDurationS * Fs)') .* ...
 %     linspace(0, 30, Fs * outDurationS)';
+F0 = linspace(21.5332, 21.5332, Fs * outDurationS)';
 
 % Placeholder for the transitional wavetable samples.
 wt = zeros(2, 1);
@@ -178,3 +179,5 @@ figure( ...
     subplot(313), ...
     spectrogram(y, 512, 64, 512, Fs, 'yaxis'), ...
     ylim([0, 22]);
+
+tfPlot(y, Fs, .01);

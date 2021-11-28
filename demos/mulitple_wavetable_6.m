@@ -26,11 +26,11 @@ x2 = audioread('./wavetables/biffy_wt.wav');
 % Create an array of wavetables.
 wavetables = {
     % A sampled wavetable.
-    resample(x1, wtLength, length(x1));
+%     resample(x1, wtLength, length(x1));
     % A sine wavetable.
-    sin(linspace(0, 2 * pi, wtLength)');
+%     sin(linspace(0, (2*pi) - (2*pi)/wtLength, wtLength)');
     % A square wavetable.
-    square(linspace(0, (2 * pi) - 1/wtLength, wtLength)');
+    square(linspace(0, (2*pi) - (2*pi)/wtLength, wtLength)');
     % Another sampled wavetable.
 %     resample(x2, wtLength, length(x2));
 };
@@ -60,6 +60,7 @@ F0 = linspace(66, 2027, Fs * outDurationS)';
 %     linspace(0, 30, Fs * outDurationS)';
 % F0 = linspace(1000, 2000, Fs * outDurationS)';
 % F0 = exp(linspace(4.5, 7.5, Fs * outDurationS)');
+F0 = linspace(20, 5000, Fs * outDurationS)';
 
 % Placeholder for the transitional wavetable samples.
 wt = zeros(2, 1);
@@ -72,7 +73,7 @@ nSinc = linspace(-2*pi, 2*pi, sincLength)';
 % The windowed sinc function.
 s = sinc(nSinc) .* hann(sincLength);
 % Sinc filter range: the number of sinc coefficients to use for each sample.
-sincRange = 50;
+sincRange = 500;
 % (Set up a rate-limiter for the wavetable transition plot.)
 transitionPlotIndex = 0;
 transitionPlotRateLimit = 200;
@@ -107,7 +108,7 @@ for n=1:(Fs * outDurationS)
     % Calculate the portion of the wavetable over which to apply the sinc
     % filter, based on the current frequency.
     % NB final multiplication is arbitrary -- need to revisit this.
-    sincWidth = (F0(n) / (Fs/2)) * 8;
+    sincWidth = (F0(n) / (Fs/2)) * 8.5;
     
     % Apply the sinc filter by summing samples, centred on the 'current' sample,
     % weighted by values from the sinc function defined above.
@@ -144,7 +145,7 @@ for n=1:(Fs * outDurationS)
         wt(2) = (1 - transition) * wavetables{wtIndex}(nextSampIndex) + ...
             transition * wavetables{nextWtIndex}(nextSampIndex);
         
-        y(n) = y(n) + ((...
+        y(n) = y(n) + (( ...
             magnitude1 * wt(1) + ...
             magnitude2 * wt(2) ...
         ) * s(sincIndex));
@@ -180,7 +181,7 @@ end
 
 toc
 
-soundsc(y, Fs);
+% soundsc(y, Fs);
 % Plot beginning/end of output against time.
 figure( ...
         'Name', 'Output', ...
@@ -201,3 +202,6 @@ figure( ...
     subplot(313), ...
     spectrogram(y, 512, 64, 512, Fs, 'yaxis'), ...
     ylim([0, 22]);
+
+tfPlot(y, Fs, .005);
+% snr(y, Fs);

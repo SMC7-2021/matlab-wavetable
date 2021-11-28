@@ -1,7 +1,7 @@
 %% Bandlimited impulse train experiment.
 % Essentially a port of https://github.com/znibbles/01-advanced-synthesis-techniques
-clear, close all, clc;
-addpath('..')
+clear; close all; clc;
+addpath('../../helpers')
 
 Fs = 44100;
 useCumsum = true;
@@ -43,7 +43,7 @@ plot(H(1:128)), ...
 % -- by integrating, i.e. filtering -- is bandlimited too.
 
 %% Create a sawtooth wave from a band-limited impulse train
-y = makeBLIT(Fs, 434.76, 1.);
+y = makeBLIT(Fs, 801, 1.);
 % As above, integrate it to create a sawtooth wave
 avg = mean(y);
 if useCumsum

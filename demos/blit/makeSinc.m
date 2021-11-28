@@ -10,7 +10,7 @@ function y = makeSinc(n, P, M)
     y = zeros(size(n));
     
     if M==P
-        % If M==P, i.e. x in sincM is an integer, so numerator of sincM will be 
+        % If M==P, i.e. x in sincM is an integer, numerator of sincM will be 
         % zero. Only compute the inverse condition, i.e. after P has been 
         % adjusted (see below).
         cond = zeros(size(n));

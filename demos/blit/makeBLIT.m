@@ -2,7 +2,7 @@ function y = makeBLIT(Fs, f0, durationS)
 %MAKEBLIT Create and return a bandlimited impulse train.
     T = durationS; %sec
     N = T*Fs; %num Samples
-    n = 1:N; %sample Index
+    n = [1:N]'; %sample Index
     t = n/Fs; %time
 
     % period in Seconds

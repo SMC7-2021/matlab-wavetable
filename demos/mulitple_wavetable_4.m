@@ -22,11 +22,11 @@ x = audioread('./wavetables/drum_wt.wav');
 % Create an array of wavetables.
 wavetables = {
     % A sampled wavetable.
-    resample(x, wtLength, length(x));
+%     resample(x, wtLength, length(x));
     % A sine wavetable.
-    sin(linspace(0, 2 * pi, wtLength)');
+%     sin(linspace(0, 2 * pi, wtLength)');
     % A square wavetable.
-    square(linspace(0, (2 * pi) - 1/wtLength, wtLength)')
+    square(linspace(0, (2*pi) - (2*pi)/wtLength, wtLength)');
 };
 
 % Plot them.
@@ -51,6 +51,7 @@ y = zeros(Fs * outDurationS, 1);
 F0 = linspace(66, 2027, Fs * outDurationS)';
 % F0 = linspace(150, 350, Fs * outDurationS)' + sin(2 * pi * 1.5 * linspace(0, outDurationS, outDurationS * Fs)') .* ...
 %     linspace(0, 30, Fs * outDurationS)';
+F0 = linspace(541, 5000, Fs * outDurationS)';
 
 % Placeholder for the transitional wavetable samples.
 wt = zeros(2, 1);
