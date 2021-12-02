@@ -11,7 +11,7 @@ wtType = 'square';
 % Sampling rate.
 Fs = 44100;
 % Output frequency.
-F0 = midi2hz(60);
+F0 = midi2hz(69);
 % Output duration.
 outDurationS = 2;
 % Wavetable length.
@@ -42,11 +42,11 @@ figure1 = figure( ...
 % Create and plot the wavetable.
 switch(wtType)
     case 'sine'
-        wt = sin(linspace(0, 2 * pi, wtLength)');
+        wt = sin(linspace(0, (2*pi) - (2*pi)/wtLength, wtLength)');
     case 'saw'
         wt = linspace(-1, 1, wtLength)';
     case 'square'
-        wt = square(linspace(0, 2 * pi, wtLength)');
+        wt = square(linspace(0, (2*pi) - (2*pi)/wtLength, wtLength)');
     case 'sample'
         x = audioread('./wavetables/vox_wt.wav');
         wt = resample(x, wtLength, length(x));
@@ -58,7 +58,7 @@ switch(aaFilterType)
         [b, a] = butter(lpfOrder, lpfCutoff, 'low');
     case 'cheby'
         % 'peak to peak passband ripple', dB
-        ripple = 3;
+        ripple = 1;
 %         [b, a] = cheby1(lpfOrder, ripple, lpfCutoff/(Fs/2), 'low');
         [b, a] = cheby1(lpfOrder, ripple, lpfCutoff, 'low');
 end

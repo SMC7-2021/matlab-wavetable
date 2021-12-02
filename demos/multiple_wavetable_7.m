@@ -12,47 +12,55 @@
 %   - For F0, select the appropriate mipmap to use for output.
 
 clear; close all; clc;
-
+addpath('../helpers');
 % Load some audio samples to use as wavetables.
 x1 = audioread('./wavetables/vox_wt.wav');
 x2 = audioread('./wavetables/violin_wt.wav');
-% Sample rate.
+% Sample rate.329468
 Fs = 44100;
 % Output duration.
-outDurationS = 1;
+outDurationS = .5;
 % Output amplitude.
 outAmp = 1.;
 % Wavetable length.
 wtLength = 2^11;
-shuffleWavetables = false;
+shuffleWavetables = true;
+% Number of mipmaps per octave.
+mipmapDensity = 3;
 % Sample interpolation type: 'truncate', 'linear', 'cubic'
 interpolationType = 'cubic';
-% Frequency output type: 'sweep', 'sweepmidi', 'fixed440', 'fixed1k', 'fixed2k'
-outputType = 'fixed2k';
+% Frequency output type: 'sweep10k', 'sweep5k', 'sweepMIDI', 'fixed440', 'fixed1k', 'fixed2k'
+outputType = '';
 % Max output samples to plot.
 maxOutPlot = 1000;
 % (Set up a rate-limiter for the wavetable transition plot.)
 transitionPlotIndex = 0;
 transitionPlotRateLimit = 200;
-doTransitionPlot = true;
+doTransitionPlot = false;
 doTfPlot = false;
 
 % Create a vector of output frequencies.
 switch outputType
+    case 'fixed440'
+        F0 = linspace(440, 440, Fs * outDurationS)';
+        doTfPlot = true;
     case 'fixed1k'
         F0 = linspace(1000.1, 1000.1, Fs * outDurationS)';
         doTfPlot = true;
     case 'fixed2k'
         F0 = linspace(2000, 2000, Fs * outDurationS)';
         doTfPlot = true;
-    case 'sweep'
+    case 'sweep10k'
         outDurationS = 20;
         F0 = linspace(20, 10000, Fs * outDurationS)';
-    case 'sweepmidi'
+	case 'sweep5k'
+        outDurationS = 20;
+        F0 = linspace(20, 5000, Fs * outDurationS)';
+    case 'sweepMIDI'
         outDurationS = 20;
         F0 = linspace(midi2hz(1), midi2hz(127), Fs * outDurationS)'; 
-    otherwise % fixed440
-        F0 = linspace(440, 440, Fs * outDurationS)';
+    otherwise % tweakable
+        F0 = linspace(600, 600, Fs * outDurationS)';
         doTfPlot = true;
 end
 
@@ -71,6 +79,7 @@ sourceWavetables = {
 %     resample(x2, wtLength, length(x2));
     % A sawtooth wavetable.
 %     sawtooth(linspace(0, (2*pi) - (2*pi)/wtLength, wtLength)');
+%     (rand(wtLength, 1) * 2) - 1;
 };
 if shuffleWavetables
     sourceWavetables = sourceWavetables(randperm(length(sourceWavetables)));
@@ -97,7 +106,8 @@ wavetables = cell(1, length(sourceWavetables));
 % sampling rate Fs (44100/2048 = 21.5332…) and proceed in octaves.
 % NB, octave spacing leaves audible gaps in the output spectrum, especially when
 % sweeping. 1/3 octave might work better.
-basisF0s = (Fs/wtLength) * 2.^(0:9);
+mipmapFreqRatio = 2^((12/mipmapDensity)/12);
+basisF0s = (Fs/wtLength) * mipmapFreqRatio.^(0:8*mipmapDensity);
 
 % Set up wavetable mipmaps.
 for i=1:length(sourceWavetables)
@@ -107,7 +117,7 @@ for i=1:length(sourceWavetables)
     % For each fundamental frequency, compute a mipmap of the wavetable 
     % bandlimited to Nyqvist.
     for f = 1:length(basisF0s)
-        x(:, f) = computeMipmap(wt, Fs, basisF0s(f));
+        x(:, f) = computeMipmap(wt, Fs, basisF0s(f), mipmapDensity);
     end
     
     wavetables{i} = x;
@@ -124,6 +134,7 @@ if doTransitionPlot
     fig2 = figure('Name', 'Wavetable transition', 'Position', [1000, 500, 600, 500]);
 end
 
+disp('Generating output...')
 % Generate output.
 for n=1:Fs*outDurationS
     % Calculate how far through the output we are.
@@ -199,6 +210,8 @@ for n=1:Fs*outDurationS
         transitionPlotIndex = transitionPlotIndex + 1;
     end
 end
+
+disp('...done!')
 
 soundsc(y, Fs);
 % Plot beginning/end of output against time.
@@ -317,21 +330,39 @@ end
  end
 
  %%
- function y = computeMipmap(x, Fs, F0)
+ function y = computeMipmap(x, Fs, F0, mipmapsPerOctave)
  %COMPUTEMIPMAP Compute a wavetable mipmap bandlimited to Nyqvist.
     % E.g. for F0 = 44100/2048 = 21.5332, 8ve spacing (2 * F0), Fc = pi/2
     % E.g. for F1 = 2*F0, Fc = pi/4
+    % mipmap
     
+    % Number of samples in one period of a signal at F0.
     sampsPerPeriod = Fs/F0;
-    Fc = ((sampsPerPeriod/length(x))/2)*.9;
+    % Ratio of mipmap basis frequencies.
+    mipmapFreqRatio = 2^((12/mipmapsPerOctave)/12);
+    % Calculate cutoff frequency.
+    % For fundamental wavetable, 2048 samples at 44100, Fc is cutoff for:
+    %   Fmax = F0 * mipmapFreqRatio
+    %   e.g. Fmax = 21.5332 * 2 = 43.0664
+    %        Fc = (Fs/2)/(Fmax/F0) = (Fs/2)/2 = Fs/4 => normalize => 1/2(*pi)
+    %        Fc = Fmax / F0 = 2
+    %   e.g. Fmax = 21.5332 * 1.2599 = 27.1297
+    %        Fc = Fmax / F0 = mipmapFreqRatio
+    %   e.g. Fmax = 43.0664
+    % Get amount by which current mipmap is oversampled.
+    oversamplingFactor = sampsPerPeriod / length(x);
+    Fc = (oversamplingFactor / mipmapFreqRatio) * .9;
+%     Fc = ((sampsPerPeriod/length(x))/2);
     % Create windowed sinc LPF
     width = 2^11;
-    h = hanning(width + 1) .* sinc(Fc*(-width/2:1:width/2)'); 
+    h = hanning(width + 1) .* sinc(Fc*(-width/2:1:width/2)');
     % Normalize DC gain
     h = h./sum(h);
     H = fft(h, length(x));
     X = fft(x);
     
+    % Multiply the frequency domain signal by the frequency response of the
+    % filter, and return to the time domain.
     y = ifft(X .* H);
     y = real(y);
  end
