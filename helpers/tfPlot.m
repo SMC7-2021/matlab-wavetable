@@ -2,6 +2,11 @@ function tfPlot(x, Fs, varargin)
 %TFPLOT Create and display a time/frequency plot
     fontName = 'Times';
     fontSize = 12;
+    
+    % Quick/dirty check for vector that should be transposed before continuing.
+    if size(x, 1) < size(x, 2)
+        x = x';
+    end
 
     N = length(x);
     t = (1:N)/Fs;
@@ -13,7 +18,7 @@ function tfPlot(x, Fs, varargin)
         grid on, ...
         xlabel('Time (sec)'), ...
         ylabel('Amplitude'), ...
-        ylim([-1.5, 1.5]), ...
+        ylim([-1.25, 1.25]), ...
         set(gca,'fontsize',fontSize,'fontname',fontName);
     
     % Limit the x-range for the time plot if a limit (in seconds) has been 

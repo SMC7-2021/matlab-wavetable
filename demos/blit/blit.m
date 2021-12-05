@@ -74,4 +74,4 @@ saw = leakyIntegrator(y - newAvg);
 saw = saw - runningAvg(saw);
 
 soundsc(saw, Fs);
-tfPlot(saw, 44100);
+tfPlot(saw(10000:end), 44100);

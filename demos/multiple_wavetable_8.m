@@ -1,36 +1,28 @@
 %% Precalculated wavetables
-
-% - Load wavetables
-% - For each wavetable, create frequency-specific mipmaps
-%   - Specify frequency ranges (8ve, 1/3 8ve...)
-%   - For each frequency range
-%       - Calculate highest allowed frequency component (1)
-%       - Compute FFT of wavetable
-%       - Attenuate frequency content above limit calculated at (1)
-%       - compute IFFT
-% - Generate output
-%   - For F0, select the appropriate mipmap to use for output.
+% Variable length mipmaps. 
+% NB, doesn't antialias as well as multiple_wavetable_7; some weirdness
+% associated with jumps between the variable length mipmaps.
 
 clear; close all; clc;
 addpath('../helpers');
 % Load some audio samples to use as wavetables.
 x1 = audioread('./wavetables/vox_wt.wav');
 x2 = audioread('./wavetables/violin_wt.wav');
-% Sample rate.329468
+% Sample rate.
 Fs = 44100;
 % Output duration.
 outDurationS = .5;
 % Output amplitude.
 outAmp = 1.;
-% Wavetable length.
+% Fundamental wavetable length.
 Lt = 2^11;
 shuffleWavetables = true;
 % Number of mipmaps per octave.
 mipmapDensity = 4;
-% Sample interpolation type: 'truncate', 'linear', 'cubic', 'sinc'
+% Sample interpolation type: 'truncate', 'linear', 'cubic'
 interpolationType = 'cubic';
 % Frequency output type: 'sweep10k', 'sweep5k', 'sweepMIDI', 'fixed440', 'fixed1k', 'fixed2k'
-outputType = '';
+outputType = 'sweep5k';
 % Max output samples to plot.
 maxOutPlot = 1000;
 % (Set up a rate-limiter for the wavetable transition plot.)
@@ -52,19 +44,15 @@ switch outputType
         doTfPlot = true;
     case 'sweep10k'
         outDurationS = 20;
-        F0 = linspace(22, 10000, Fs * outDurationS)';
+        F0 = linspace(20, 10000, Fs * outDurationS)';
 	case 'sweep5k'
         outDurationS = 20;
-        F0 = linspace(22, 5000, Fs * outDurationS)';
+        F0 = linspace(20, 5000, Fs * outDurationS)';
     case 'sweepMIDI'
         outDurationS = 20;
         F0 = linspace(midi2hz(1), midi2hz(127), Fs * outDurationS)'; 
     otherwise % tweakable
-        outDurationS = 2;
-        Fa = 200;
-        Fb = 1;
-        F0 = [linspace(Fa, Fb, Fs * outDurationS/2)';...
-            linspace(Fb, Fa, Fs * outDurationS/2)'];
+        F0 = linspace(1500, 1500, Fs * outDurationS)';
         doTfPlot = true;
 end
 
@@ -72,19 +60,19 @@ end
 % wavetables; uncomment multiple statements to enable morphing.)
 sourceWavetables = {
     % A sampled wavetable.
-    resample(x1, Lt, length(x1));
+%     resample(x1, Lt, length(x1));
     % A sine wavetable.
-    sin(linspace(0, (2*pi) - (2*pi)/Lt, Lt)');
+%     sin(linspace(0, (2*pi) - (2*pi)/Lt, Lt)');
     % A discontinuous sine wavetable.
-    sin(linspace(0, 2.2*pi, Lt)');
+%     sin(linspace(0, 2.2*pi, Lt)');
     % A square wavetable.
     square(linspace(0, (2*pi) - (2*pi)/Lt, Lt)');
     % Another sampled wavetable.
-    resample(x2, Lt, length(x2));
+%     resample(x2, Lt, length(x2));
     % A sawtooth wavetable.
     sawtooth(linspace(0, (2*pi) - (2*pi)/Lt, Lt)');
     % A noise wavetable
-    (rand(Lt, 1) * 2) - 1;
+%     (rand(Lt, 1) * 2) - 1;
 };
 if shuffleWavetables
     sourceWavetables = sourceWavetables(randperm(length(sourceWavetables)));
@@ -108,22 +96,23 @@ wavetables = cell(1, length(sourceWavetables));
 
 % Create a vector of frequencies to serve as the basis for the wavetable mipmaps.
 % Start from the 'fundamental' frequency of a wavetable of length 'Lt' at
-% sampling rate Fs (44100/2048 = 21.5332…) and proceed in octaves.
-% NB, octave spacing leaves audible gaps in the output spectrum, especially when
-% sweeping. 1/3 octave might work better.
-% NB, mipmapDensity addresses the above. 
+% sampling rate Fs (44100/2048 = 21.5332…) and proceed thnough nine octaves
+% according to mipmap density.
 mipmapFreqRatio = 2^((12/mipmapDensity)/12);
 basisF0s = (Fs/Lt) * mipmapFreqRatio.^(0:9*mipmapDensity);
+% Create a vector of simulated sampling rates for mipmap generation.
+% For 'fundamental' wavetable frequency, use Fs. For higher mipmaps, use 
+% basisFs = 
 
 % Set up wavetable mipmaps.
 for i=1:length(sourceWavetables)
     wt = sourceWavetables{i};
-    x = zeros(Lt, length(basisF0s));
+    x = cell(length(basisF0s), 1);
     
     % For each fundamental frequency, compute a mipmap of the wavetable 
     % bandlimited to Nyqvist.
     for f = 1:length(basisF0s)
-        x(:, f) = computeMipmap(wt, Fs, basisF0s(f), mipmapDensity);
+        x{f} = computeMipmap(wt, Fs, basisF0s(f), mipmapDensity);
     end
     
     wavetables{i} = x;
@@ -131,8 +120,10 @@ end
 
 % Placeholder for the wavetable morph samples.
 wt = zeros(2, 1);
-% Initialize the wavetable sample index.
-phase = 1;
+% To work with variable sample-length mipmaps, this demo defines phase as a 
+% normalized quantity, 0 < phi < 1, and, to define the input sample indices, 
+% multiplies phi by the length of the current mipmap.
+phase = 0;
 % Create output placeholder.
 y = zeros(Fs * outDurationS, 1);
 
@@ -141,6 +132,7 @@ if doTransitionPlot
 end
 
 disp('Generating output...')
+
 % Generate output.
 for n=1:Fs*outDurationS
     % Calculate how far through the output we are.
@@ -175,19 +167,18 @@ for n=1:Fs*outDurationS
     end
 
     % Calculate the transitional wavetable samples.
+    % First, convert normalized phase to read index.
+    readIndex = (phase * length(wavetables{wtIndex}{mipmap})) + 1;
     switch interpolationType
         case 'truncate'
-            wt(1) = interpolateZeroth(wavetables{wtIndex}(:, mipmap), phase);
-            wt(2) = interpolateZeroth(wavetables{nextWtIndex}(:, mipmap), phase);
+            wt(1) = interpolateZeroth(wavetables{wtIndex}{mipmap}, readIndex);
+            wt(2) = interpolateZeroth(wavetables{nextWtIndex}{mipmap}, readIndex);
         case 'linear'
-            wt(1) = interpolateLinear(wavetables{wtIndex}(:, mipmap), phase);
-            wt(2) = interpolateLinear(wavetables{nextWtIndex}(:, mipmap), phase);
-        case 'sinc'
-            wt(1) = interpolateSinc(wavetables{wtIndex}(:, mipmap), phase);
-            wt(2) = interpolateSinc(wavetables{nextWtIndex}(:, mipmap), phase);
+            wt(1) = interpolateLinear(wavetables{wtIndex}{mipmap}, readIndex);
+            wt(2) = interpolateLinear(wavetables{nextWtIndex}{mipmap}, readIndex);
         otherwise % cubic
-            wt(1) = interpolateCubic(wavetables{wtIndex}(:, mipmap), phase);
-            wt(2) = interpolateCubic(wavetables{nextWtIndex}(:, mipmap), phase);
+            wt(1) = interpolateCubic(wavetables{wtIndex}{mipmap}, readIndex);
+            wt(2) = interpolateCubic(wavetables{nextWtIndex}{mipmap}, readIndex);
     end
 
     % Calculate the output sample.
@@ -199,13 +190,14 @@ for n=1:Fs*outDurationS
     % Calculate the number of samples per period of the wavetable to produce the
     % current frequency.
     sampsPerPeriod = Fs / F0(n);
-    phaseIncrement = Lt / sampsPerPeriod;
+    % Calculate the normalized phase increment.
+    phaseIncrement = 1 / sampsPerPeriod;
     
     % (Previous index just used for plotting.)
     prevPhase = phase;
     
     % Upadate the wavetable sample index for the next iteration.
-    phase = mod(phase + phaseIncrement, Lt);
+    phase = mod(phase + phaseIncrement, 1);
 
     % Make a cool plot of the wavetable morph transition.
     if doTransitionPlot && phase < prevPhase && n > sampsPerPeriod
@@ -250,31 +242,12 @@ if doTfPlot
 end
 
 %%
-% close all; 
-% Fs = 44100;
-% F0 = 1234;
-% p = 100;
-% t = linspace(0, p*(1/F0), p*(Fs/F0))';
-% x = sin(2 * pi * F0 * t);
-% plot(t, x)
-% X = abs(fft(x, Fs));
-% figure; plot(linspace(0, Fs-1, Fs), X);
-
-%%
-% clear; close all;
-% Fs = 44100;
-%  t = 0:1/Fs:0.1-1/Fs;
-%  x = cos(2*pi*10*t);
-%  xdft = fft(x);
-%  xdft = xdft(1:length(x)/2+1);
-%  df = Fs/length(x);
-%  freqvec = 0:df:Fs/2;
-%  stem(freqvec,abs(xdft),'markerfacecolor',[0 0 1])
-
-%%
 function y = interpolateZeroth(x, readIndex)
+    % Truncate the read index.
     n = floor(readIndex);
+    % Wrap as required.
     readIndices = wrapIndices(n, length(x));
+    % Get output.
     y = x(readIndices(1));
 end
  
@@ -328,26 +301,6 @@ end
  end
  
  %%
- function y = interpolateSinc(x, readIndex)
-    % Get the fractional part of the read index.
-    alpha = mod(readIndex, 1);
-    % Compute a windowed sinc function of arbitrary width, centred on the read
-    % index.
-    width = 2^4;
-    indices = (-width/2 + 1:width/2);
-    s = hann(width)' .* sinc(indices - alpha);
-    
-    % Get the indices of the samples we need from the input signal.
-    % Start by getting the index of the ith sample.
-    n = floor(readIndex);
-    % Create a vector of the sample indices we need for sinc interpolation.
-    % Wrap as required.
-    readIndices = wrapIndices(indices + n, length(x));
-    
-    y = s * x(readIndices);
- end
- 
- %%
  function indices = wrapIndices(indices, bufferLength)
  %WRAPINDICES Wrap sample indices that fall outside of the length of a buffer.
     for i=1:length(indices)
@@ -361,14 +314,26 @@ end
 
  %%
  function y = computeMipmap(x, Fs, F0, mipmapsPerOctave)
- %COMPUTEMIPMAP Compute a wavetable mipmap bandlimited to Nyqvist.
+ %COMPUTEMIPMAP Compute a variable length wavetable mipmap bandlimited to Nyqvist.
     % E.g. for F0 = 44100/2048 = 21.5332, 8ve spacing (2 * F0), Fc = pi/2
     % E.g. for F1 = 2*F0, Fc = pi/4
-   
+
+    Lt = length(x);
+    
     % Number of samples in one period of a signal at F0.
     sampsPerPeriod = Fs/F0;
+    % Downsample input based on required level of detail. For fundamental
+    % wavetable (F0 = 21.5332), downsample by factor of 1 (i.e. don't 
+    % downsample); for F0*2, downsample by factor of 2; for F0*2^2, downsample
+    % by factor of 2^2.
+    periodsPerWT = Lt/sampsPerPeriod;
+    powerTwo = floor(log2(periodsPerWT));
+    M = 2^powerTwo;
+    x = downsample(x, M);
+    
     % Ratio of mipmap basis frequencies.
     mipmapFreqRatio = 2^((12/mipmapsPerOctave)/12);
+    
     % Calculate cutoff frequency.
     % For fundamental wavetable, 2048 samples at 44100, F0 = 21.5332 Hz, Fc is 
     % cutoff for the highest intended frequency for the mipmap, i.e.
@@ -382,6 +347,8 @@ end
     % i.e. the need to skip some samples in order to get the desired frequency.
     
     % Get amount by which current mipmap's bottom frequency is undersampled.
+    % E.g. Lt = 2048, F0 = 25.6 Hz, therefore wavetable phase increment is 
+    % greater than 1.
     underSamplingFactor = (sampsPerPeriod) / length(x);
     % Cutoff is 1 over the ratio of the top/bottom of the mipmap, multiplied by
     % the undersampling factor.
@@ -403,4 +370,3 @@ end
     % why this is, however, here's a quick-and-dirty fix.
     y = [y(length(y)/2 + 1:end); y(1:length(y)/2)];
  end
- 

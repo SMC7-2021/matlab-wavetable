@@ -3,7 +3,7 @@
 clear, close all;
 Fs = 44100; %init 1000
 duration = 1;
-F0 = 2500; %init 5
+F0 = 400; %init 5
 t = linspace(0, 1, Fs)';
 x = zeros(Fs*duration, 10);
 
@@ -74,3 +74,4 @@ figure;
 stem(t(175:225), x(175:225, 10)), title('Detail of differentiated signal');
 
 soundsc(x(:, 7), Fs);
+tfPlot(x(:, 7), Fs);
