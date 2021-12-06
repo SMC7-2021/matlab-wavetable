@@ -27,6 +27,15 @@ mipmapDensity = 1;
 interpolationType = 'cubic';
 % Frequency output type: 'sweep10k', 'sweep5k', 'sweepMIDI', 'fixed440', 'fixed1k', 'fixed2k'
 outputType = '';
+% Decimation filter type: 
+% 'built-in' -- just use Matlab's decimate() function, which uses an 8th order
+% Chebyshev filter under the hood, applied both forwards and backwards to
+% eliminate phase distortion.
+% 'designed' -- use a filter created with Matlab's filter designer.
+% 'derived' -- use a filter derived at runtime; similar to 'designed' but uses b
+% and a coefficients rather than a df2sos object.
+% 'biquad' -- a not-so-effective biquad implementation.
+filterType = 'designed';
 % Max output samples to plot.
 maxOutPlot = 1000;
 % (Set up a rate-limiter for the wavetable transition plot.)
@@ -56,9 +65,9 @@ switch outputType
         outDurationS = 20;
         F0 = linspace(midi2hz(1), midi2hz(127), FsOs * outDurationS)'; 
     otherwise % tweakable
-        outDurationS = 2;
-        Fa = 263;
-        Fb = 1263;
+        outDurationS = .5;
+        Fa = 563;
+        Fb = 563;
         F0 = [linspace(Fa, Fb, FsOs * outDurationS/2)';...
             linspace(Fb, Fa, FsOs * outDurationS/2)'];
         doTfPlot = true;
@@ -217,7 +226,56 @@ for n=1:FsOs*outDurationS
     end
 end
 
-y = decimate(y, overSamp);
+% Apply antialiasing filter and downsample.
+switch filterType
+    case 'built-in'
+        y = decimate(y, overSamp);
+    case 'designed'
+        Fpass = 0.45;         % Passband Frequency
+        Fstop = 0.55;         % Stopband Frequency
+        Apass = 1;           % Passband Ripple (dB)
+        Astop = 80;          % Stopband Attenuation (dB)
+        match = 'passband';  % Band to match exactly
+
+        % Construct an FDESIGN object and call its CHEBY1 method.
+        h  = fdesign.lowpass(Fpass, Fstop, Apass, Astop);
+        Hd = design(h, 'cheby1', 'MatchExactly', match);
+
+        y = filter(Hd, y);
+        y = downsample(y, overSamp);
+    case 'derived'
+        Fpass = 0.45;         % Passband Frequency
+        Fstop = 0.55;         % Stopband Frequency
+        Apass = 1;           % Passband Ripple (dB)
+        Astop = 80;          % Stopband Attenuation (dB)
+        [ord, Fc] = cheb1ord(Fpass, Fstop, Apass, Astop);
+        [b, a] = cheby1(ord, Apass, Fc);
+
+        y = filter(b, a, y);
+        y = downsample(y, overSamp);
+    case 'biquad'
+        % Apply biquad lowpass, then downsample
+        % Coefficients baked per instructions here: https://webaudio.github.io/Audio-EQ-Cookbook/audio-eq-cookbook.html
+        Fc = 20000 * overSamp;
+        dBGain = 48;
+        A = 10^(dBGain/40);
+        S = 1;
+        w0 = 2 * pi * (Fc / FsOs);
+        % alpha = sin(w0)/(2*Q);
+        alpha = (sin(w0)/2) * sqrt((A + (1/A))*((1/S) - 1) + 2);
+        b = [ ...
+            (1 - cos(w0))/2, ...
+            1 - cos(w0), ...
+            (1 - cos(w0))/2 ...
+        ];
+        a = [ ...
+            1 + alpha, ...
+            -2 * cos(w0), ...
+            1 - alpha ...
+        ];
+        y = filter(b, a, y);
+        y = downsample(y, overSamp);
+end
 
 disp('...done!')
 
