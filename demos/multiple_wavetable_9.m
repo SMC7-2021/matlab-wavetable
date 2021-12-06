@@ -22,20 +22,20 @@ outAmp = 1.;
 Lt = 2^11;
 shuffleWavetables = true;
 % Number of mipmaps per octave.
-mipmapDensity = 1;
+mipmapDensity = 3;
 % Sample interpolation type: 'truncate', 'linear', 'cubic', 'sinc'
 interpolationType = 'cubic';
 % Frequency output type: 'sweep10k', 'sweep5k', 'sweepMIDI', 'fixed440', 'fixed1k', 'fixed2k'
-outputType = '';
+outputType = 'sweep10k';
 % Decimation filter type: 
-% 'built-in' -- just use Matlab's decimate() function, which uses an 8th order
+% 'builtin' -- just use Matlab's decimate() function, which uses an 8th order
 % Chebyshev filter under the hood, applied both forwards and backwards to
 % eliminate phase distortion.
 % 'designed' -- use a filter created with Matlab's filter designer.
 % 'derived' -- use a filter derived at runtime; similar to 'designed' but uses b
 % and a coefficients rather than a df2sos object.
 % 'biquad' -- a not-so-effective biquad implementation.
-filterType = 'biquad';
+filterType = 'builtin';
 % Max output samples to plot.
 maxOutPlot = 1000;
 % (Set up a rate-limiter for the wavetable transition plot.)
@@ -66,8 +66,8 @@ switch outputType
         F0 = linspace(midi2hz(1), midi2hz(127), FsOs * outDurationS)'; 
     otherwise % tweakable
         outDurationS = .5;
-        Fa = 563;
-        Fb = 563;
+        Fa = 2563;
+        Fb = 2563;
         F0 = [linspace(Fa, Fb, FsOs * outDurationS/2)';...
             linspace(Fb, Fa, FsOs * outDurationS/2)'];
         doTfPlot = true;
@@ -228,7 +228,7 @@ end
 
 % Apply antialiasing filter and downsample.
 switch filterType
-    case 'built-in'
+    case 'builtin'
         y = decimate(y, overSamp);
     case 'designed'
         Fpass = 0.45;         % Passband Frequency
@@ -272,6 +272,9 @@ switch filterType
             1 - alpha ...
         ];
         y = filter(b, a, y);
+        y = downsample(y, overSamp);
+    otherwise
+        % Just downsample...
         y = downsample(y, overSamp);
 end
 
