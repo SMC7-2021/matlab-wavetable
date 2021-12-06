@@ -217,13 +217,7 @@ for n=1:FsOs*outDurationS
     end
 end
 
-% y = decimate(y, overSamp);
-
-b = [1, .99];
-a = [1];
-y = filter(b, a, y);
-y = downsample(y, overSamp);
-
+y = decimate(y, overSamp);
 
 disp('...done!')
 
