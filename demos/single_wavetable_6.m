@@ -11,7 +11,7 @@ wtType = 'square';
 % Sampling rate.
 Fs = 44100;
 % Output frequency.
-F0 = midi2hz(60);
+F0 = midi2hz(90);
 % Output duration.
 outDurationS = .5;
 % Wavetable length.

@@ -1,4 +1,4 @@
-function y = polyBLAMP(x)
+function y = polyBLAMP(x, threshold)
 %POLYBLAMP Apply four-coefficient polynomial band-limited ramp approximation to signal.
 
 % Iterate over samples
@@ -22,7 +22,9 @@ function y = polyBLAMP(x)
     corner = 1;
     corner_n1 = 1;
     
-    threshold = .5;
+    if nargin == 1
+        threshold = .5;
+    end
 
     flag = 0;
 
@@ -58,10 +60,7 @@ function y = polyBLAMP(x)
 
         yn = xn;
 
-        % Trivially-clipped signal can be extracted from here
-%             x_clipped(n) = yn;
-
-        % If clipping point then implement correction
+        % If corner then implement correction
         if (corner-corner_n1) ~= 0
             flag = 1; 
         elseif flag==1
@@ -72,7 +71,7 @@ function y = polyBLAMP(x)
             % Determine the amplitude of the point of corner onset.
             L = xn3;
 
-            % Perform polynomial interpolation around clipping boundaries
+            % Perform polynomial interpolation around corner boundaries
             p_a =  (-1/6)*xn3  +    0.5*xn2  -  0.5*xn1  +  (1/6)*xn;
             p_b =         xn3  -  (5/2)*xn2  +    2*xn1  -    0.5*xn;
             p_c = (-11/6)*xn3  +      3*xn2  -  1.5*xn1  +  (1/3)*xn;

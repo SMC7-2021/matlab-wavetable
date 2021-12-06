@@ -181,7 +181,7 @@ end
 
 toc
 
-% soundsc(y, Fs);
+soundsc(y, Fs);
 % Plot beginning/end of output against time.
 figure( ...
         'Name', 'Output', ...

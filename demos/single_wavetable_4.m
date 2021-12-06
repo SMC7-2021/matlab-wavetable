@@ -11,7 +11,7 @@ wtType = 'square';
 % Sample rate.
 Fs = 44100;
 % Output frequency.
-F0 = 532;
+F0 = 2532;
 % Output duration.
 outDurationS = 2;
 % Output buffer size.
@@ -138,3 +138,5 @@ subplot(313), ...
 %     % spectrogram( y_, 512, 64, 512, Fs, 'yaxis');
 %     freqz(y_);
 % end
+
+tfPlot(y, Fs);

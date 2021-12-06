@@ -13,10 +13,11 @@
 
 clear; close all; clc;
 addpath('../helpers');
+addpath('./blamp');
 % Load some audio samples to use as wavetables.
 x1 = audioread('./wavetables/vox_wt.wav');
 x2 = audioread('./wavetables/violin_wt.wav');
-% Sample rate.329468
+% Sample rate.
 Fs = 44100;
 % Output duration.
 outDurationS = .5;
@@ -61,8 +62,8 @@ switch outputType
         F0 = linspace(midi2hz(1), midi2hz(127), Fs * outDurationS)'; 
     otherwise % tweakable
         outDurationS = 2;
-        Fa = 200;
-        Fb = 1;
+        Fa = 2060;
+        Fb = 2060;
         F0 = [linspace(Fa, Fb, Fs * outDurationS/2)';...
             linspace(Fb, Fa, Fs * outDurationS/2)'];
         doTfPlot = true;
@@ -74,7 +75,7 @@ sourceWavetables = {
     % A sampled wavetable.
     resample(x1, Lt, length(x1));
     % A sine wavetable.
-    sin(linspace(0, (2*pi) - (2*pi)/Lt, Lt)');
+%     sin(linspace(0, (2*pi) - (2*pi)/Lt, Lt)');
     % A discontinuous sine wavetable.
     sin(linspace(0, 2.2*pi, Lt)');
     % A square wavetable.
@@ -223,6 +224,8 @@ end
 
 disp('...done!')
 
+% y = polyBLAMP(y);
+
 soundsc(y, Fs);
 % Plot beginning/end of output against time.
 figure( ...
@@ -319,7 +322,7 @@ end
         alpha * (alpha + 1) * (alpha - 1)/6 ...
     ];
 
-%     y3(n) = coeffs(1)*x(readIndices(1)) + ...
+%     y = coeffs(1)*x(readIndices(1)) + ...
 %         coeffs(2)*x(readIndices(2)) + ...
 %         coeffs(3)*x(readIndices(3)) + ...
 %         coeffs(4)*x(readIndices(4));
@@ -385,7 +388,7 @@ end
     underSamplingFactor = (sampsPerPeriod) / length(x);
     % Cutoff is 1 over the ratio of the top/bottom of the mipmap, multiplied by
     % the undersampling factor.
-    Fc = (underSamplingFactor / mipmapFreqRatio);
+    Fc = (underSamplingFactor / mipmapFreqRatio)*.9;
     % Create windowed sinc LPF: sin(Fc * x)/(Fc * x)
     width = length(x);
     h = hann(width + 1) .* sinc(Fc*(-width/2:1:width/2)');
