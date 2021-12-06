@@ -35,7 +35,7 @@ outputType = '';
 % 'derived' -- use a filter derived at runtime; similar to 'designed' but uses b
 % and a coefficients rather than a df2sos object.
 % 'biquad' -- a not-so-effective biquad implementation.
-filterType = 'designed';
+filterType = 'biquad';
 % Max output samples to plot.
 maxOutPlot = 1000;
 % (Set up a rate-limiter for the wavetable transition plot.)
@@ -255,14 +255,12 @@ switch filterType
         y = downsample(y, overSamp);
     case 'biquad'
         % Apply biquad lowpass, then downsample
-        % Coefficients baked per instructions here: https://webaudio.github.io/Audio-EQ-Cookbook/audio-eq-cookbook.html
-        Fc = 20000 * overSamp;
-        dBGain = 48;
-        A = 10^(dBGain/40);
-        S = 1;
+        % Coefficients baked, inexpertly, per instructions here: 
+        % https://webaudio.github.io/Audio-EQ-Cookbook/audio-eq-cookbook.html
+        Fc = 20000;
+        Q = .1;
         w0 = 2 * pi * (Fc / FsOs);
-        % alpha = sin(w0)/(2*Q);
-        alpha = (sin(w0)/2) * sqrt((A + (1/A))*((1/S) - 1) + 2);
+        alpha = sin(w0)/(2*Q);
         b = [ ...
             (1 - cos(w0))/2, ...
             1 - cos(w0), ...
