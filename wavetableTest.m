@@ -1,5 +1,7 @@
 clear; close all; clc;
 
+addpath('./helpers');
+
 Fs = 44100;
 duration = 2;
 F0 = [206, 206];
