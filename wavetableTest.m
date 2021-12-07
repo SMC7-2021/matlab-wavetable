@@ -1,14 +1,14 @@
 clear; close all; clc;
 
 Fs = 44100;
-duration = 3;
-F0 = [456, 645];
+duration = 2;
+F0 = [206, 206];
 
 % Specify wavetables, either...
 % a single trivial wavetable:
-wavetables = "square";
+% wavetables = "square";
 % an array of trivial wavetables:
-% wavetables = ["sawtooth", "noise", "square"];
+wavetables = ["sawtooth", "noise", "square", "sine", "sineBroken"];
 % an audio file to read and split into wavetable chunks.
 % wavetables = audioread('./wavetables/braids2.wav');
 
