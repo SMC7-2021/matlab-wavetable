@@ -4,35 +4,44 @@ function y = wavetable(Fs, duration, F0, varargin)
     oversample = 1;
     interpolationType = 'truncate';
     wavetableType = "square";
+    audio = [];
     
     % Mipmap perameters
     numOctaves = 9;
     mipmapsPerOctave = 0;
     
     for i = 1:nargin-3
-        switch varargin{i}
-            case 'Oversample'
-                if floor(varargin{i + 1}) ~= varargin{i + 1} || varargin{i + 1} < 1
-                    error('Oversampling factor must be a positive integer.');
-                end
-                oversample = varargin{i + 1};
-            case 'InterpolationType'
-                if ~ismember(varargin{i + 1}, ['truncate', 'linear', 'cubic', 'sinc'])
-                    error("InterpolationType must be one of 'zeroth', 'linear', 'cubic', or 'sinc'.");
-                end
-                interpolationType = varargin{i + 1};
-            case 'WavetableType'
-                wavetableType = varargin{i + 1};
-            case 'OutputAmplitude'
-                if ~isnumeric(varargin{i + 1})
-                    error('OutputAmplitude must be a number.');
-                end
-                outAmp = varargin{i + 1};
-            case 'MipmapsPerOctave'
-                if floor(varargin{i + 1}) ~= varargin{i + 1} || varargin{i + 1} < 0
-                    error('MipmapsPerOctave must be a positive integer or zero.');
-                end
-                mipmapsPerOctave = varargin{i + 1};
+        if ischar(varargin{i}) || isstring(varargin{i})
+            switch varargin{i}
+                case 'Oversample'
+                    if floor(varargin{i + 1}) ~= varargin{i + 1} || varargin{i + 1} < 1
+                        error('Oversampling factor must be a positive integer.');
+                    end
+                    oversample = varargin{i + 1};
+                case 'InterpolationType'
+                    if ~ismember(varargin{i + 1}, ['truncate', 'linear', 'cubic', 'sinc'])
+                        error("InterpolationType must be one of 'zeroth', 'linear', 'cubic', or 'sinc'.");
+                    end
+                    interpolationType = varargin{i + 1};
+                case 'Wavetables'
+                    if isstring(varargin{i + 1})
+                        wavetableType = varargin{i + 1};
+                    else
+                        wavetableType = "arbitrary";
+                        audio = varargin{i + 1};
+                    end
+
+                case 'OutputAmplitude'
+                    if ~isnumeric(varargin{i + 1})
+                        error('OutputAmplitude must be a number.');
+                    end
+                    outAmp = varargin{i + 1};
+                case 'MipmapsPerOctave'
+                    if floor(varargin{i + 1}) ~= varargin{i + 1} || varargin{i + 1} < 0
+                        error('MipmapsPerOctave must be a positive integer or zero.');
+                    end
+                    mipmapsPerOctave = varargin{i + 1};
+            end
         end
     end
     
@@ -61,6 +70,22 @@ function y = wavetable(Fs, duration, F0, varargin)
                 sourceWavetables{i} = (rand(Lt, 1) * 2) - 1;
             case 'sineBroken'
                 sourceWavetables{i} = sin(linspace(0, 2.2*pi, Lt)');
+            case 'arbitrary'
+                % Treat source audio as-is; split into chunks of 2048 samples.
+%                 for n=1:floor(length(audio)/Lt)
+%                     sourceWavetables{n} = audio((n-1)*Lt + 1:n*Lt);
+%                 end
+
+                % Treat source audio as chunks of 256 samples, resampled to 2048
+                % sample wavetables.
+                chunkLength = 2^8;
+                for n=1:floor(length(audio)/chunkLength)
+                    sourceWavetables{n} = resample( ...
+                        audio((n-1)*chunkLength + 1:n*chunkLength), ...
+                        Lt, ...
+                        chunkLength ...
+                    );
+                end
             otherwise
                 error('WavetableType must be one (or an array) of "square", "sine", "sawtooth", "noise", "sineBroken".');
         end

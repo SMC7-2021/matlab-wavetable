@@ -24,9 +24,11 @@ Specified as key/value pairs.
 `'InterpolationType'` (string) one of `truncate` (default), `linear`, `cubic`, 
 or `sinc` to be applied to the wavetable when handling fractional phase values.
 
-`'WavetableType'` (string or vector) default `"square"`. Either a single string
+`'Wavetables'` (string or vector) default `"square"`. Either a single string
 wrapped in *double quotes*, one of `"square"`, `"sine"`, `"sawtooth"`, `"noise"`
-or `"sineBroken"`, or an array of those.
+or `"sineBroken"`, or an array of those. Alternatively, specify a vector of 
+audio samples; this will be split into chunks of 256 samples and the chunks
+resampled to 2048-sample wavetables.
 
 `'MipmapsPerOctave'` (integer) default `0`. If `0`, no mipmapping will be
 applied, i.e. the same untreated wavetable will be used for all frequencies.
