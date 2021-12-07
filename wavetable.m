@@ -3,7 +3,7 @@ function y = wavetable(Fs, duration, F0, varargin)
     outAmp = 1;
     oversample = 1;
     interpolationType = 'truncate';
-    wavetableType = 'square';
+    wavetableType = "square";
     
     % Mipmap perameters
     numOctaves = 9;
@@ -47,23 +47,24 @@ function y = wavetable(Fs, duration, F0, varargin)
             F0 = linspace(F0(1), F0(2), Fs*duration)';
     end
     
-    % Create an array of source wavetables.
-    sourceWavetables = {
-        % A sampled wavetable.
-%         resample(x1, Lt, length(x1));
-        % A sine wavetable.
-%         sin(linspace(0, (2*pi) - (2*pi)/Lt, Lt)');
-        % A discontinuous sine wavetable.
-%         sin(linspace(0, 2.2*pi, Lt)');
-        % A square wavetable.
-        square(linspace(0, (2*pi) - (2*pi)/Lt, Lt)');
-        % Another sampled wavetable.
-%         resample(x2, Lt, length(x2));
-        % A sawtooth wavetable.
-%         sawtooth(linspace(0, (2*pi) - (2*pi)/Lt, Lt)');
-        % A noise wavetable
-%         (rand(Lt, 1) * 2) - 1;
-    };
+    sourceWavetables = cell(length(wavetableType), 1);
+    
+    for i=1:length(wavetableType)
+        switch wavetableType(i)
+            case 'square'
+                sourceWavetables{i} = square(linspace(0, (2*pi) - (2*pi)/Lt, Lt)');
+            case 'sawtooth'
+                sourceWavetables{i} = sawtooth(linspace(0, (2*pi) - (2*pi)/Lt, Lt)');
+            case 'sine'
+                sourceWavetables{i} = sin(linspace(0, (2*pi) - (2*pi)/Lt, Lt)');
+            case 'noise'
+                sourceWavetables{i} = (rand(Lt, 1) * 2) - 1;
+            case 'sineBroken'
+                sourceWavetables{i} = sin(linspace(0, 2.2*pi, Lt)');
+            otherwise
+                error('WavetableType must be one (or an array) of "square", "sine", "sawtooth", "noise", "sineBroken".');
+        end
+    end
     
     % Create a placeholder for the wavetable mipmaps.
     wavetables = cell(1, length(sourceWavetables));
