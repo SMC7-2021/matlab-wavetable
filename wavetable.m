@@ -12,8 +12,8 @@ function y = wavetable(Fs, duration, F0, varargin)
     for i = 1:nargin-3
         switch varargin{i}
             case 'Oversample'
-                if floor(varargin{i + 1}) ~= varargin{i + 1}
-                    error('Oversampling factor must be an integer.');
+                if floor(varargin{i + 1}) ~= varargin{i + 1} || varargin{i + 1} < 1
+                    error('Oversampling factor must be a positive integer.');
                 end
                 oversample = varargin{i + 1};
             case 'InterpolationType'
