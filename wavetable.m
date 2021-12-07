@@ -7,7 +7,7 @@ function y = wavetable(Fs, duration, F0, varargin)
     
     % Mipmap perameters
     numOctaves = 9;
-    mipmapsPerOctave = 3;
+    mipmapsPerOctave = 0;
     
     for i = 1:nargin-3
         switch varargin{i}
@@ -27,6 +27,12 @@ function y = wavetable(Fs, duration, F0, varargin)
                 if ~isnumeric(varargin{i + 1})
                     error('OutputAmplitude must be a number.');
                 end
+                outAmp = varargin{i + 1};
+            case 'MipmapsPerOctave'
+                if floor(varargin{i + 1}) ~= varargin{i + 1} || varargin{i + 1} < 0
+                    error('MipmapsPerOctave must be a positive integer or zero.');
+                end
+                mipmapsPerOctave = varargin{i + 1};
         end
     end
     
@@ -37,7 +43,7 @@ function y = wavetable(Fs, duration, F0, varargin)
     switch length(F0)
         case 1
             F0 = linspace(F0, F0, Fs*duration)';
-        case 2
+        otherwise
             F0 = linspace(F0(1), F0(2), Fs*duration)';
     end
     
@@ -62,29 +68,32 @@ function y = wavetable(Fs, duration, F0, varargin)
     % Create a placeholder for the wavetable mipmaps.
     wavetables = cell(1, length(sourceWavetables));
 
-    % Create a vector of frequencies to serve as the basis for the wavetable mipmaps.
-    % Start from the 'fundamental' frequency of a wavetable of length 'Lt' at
-    % sampling rate Fs (44100/2048 = 21.5332…) and proceed in octaves.
-    % NB, octave spacing leaves audible gaps in the output spectrum, especially when
-    % sweeping. 1/3 octave might work better.
-    % NB, mipmapDensity addresses the above. 
+    % Create a vector of frequencies to serve as the basis for the wavetable 
+    % mipmaps.
+    % Start from the 'fundamental' frequency of a wavetable of length Lt at
+    % sampling rate Fs ((44100*oversample)/2048 = oversample*21.5332…) and 
+    % proceed according to mipmapsPerOctave.
     mipmapFreqRatio = 2^((12/mipmapsPerOctave)/12);
     basisF0s = (Fs/Lt) * mipmapFreqRatio.^(0:numOctaves*mipmapsPerOctave);
 
     % Set up wavetable mipmaps.
     for i=1:length(sourceWavetables)
-        wt = sourceWavetables{i};
-        x = zeros(Lt, length(basisF0s));
+        if mipmapsPerOctave > 0
+            wt = sourceWavetables{i};
+            x = zeros(Lt, length(basisF0s));
 
-        % For each fundamental frequency, compute a mipmap of the wavetable 
-        % bandlimited to Nyqvist.
-        for f = 1:length(basisF0s)
-            x(:, f) = computeMipmap(wt, Fs, basisF0s(f), mipmapsPerOctave);
+            % For each fundamental frequency, compute a mipmap of the wavetable 
+            % bandlimited to Nyqvist.
+            for f = 1:length(basisF0s)
+                x(:, f) = computeMipmap(wt, Fs, basisF0s(f), mipmapsPerOctave);
+            end
+        else
+            x = sourceWavetables{i};
         end
 
         wavetables{i} = x;
     end
-   
+
     % Placeholder for the wavetable morph samples.
     wt = zeros(2, 1);
     % Initialize the wavetable sample index.

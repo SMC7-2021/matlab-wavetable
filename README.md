@@ -26,8 +26,11 @@ or `sinc` to be applied to the wavetable when handling fractional phase values.
 
 `'WavetableType'` (string) default `square`. Only `square` supported for now.
 
+`'MipmapsPerOctave'` (integer) default `0`. If `0`, no mipmapping will be
+applied, i.e. the same untreated wavetable will be used for all frequencies.
+
 `'Oversample'` (integer, `>= 1`) default `1`. If `1`, no oversampling will take
-place.
+place. NB, mipmaps will be calculated with respect to `Fs * Oversample`.
 
 ## Returns
 `y` (vector) the output signal.
