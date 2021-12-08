@@ -111,7 +111,7 @@ function y = wavetable(Fs, duration, F0, varargin)
             % For each fundamental frequency, compute a mipmap of the wavetable 
             % bandlimited to Nyqvist.
             for f = 1:length(basisF0s)
-                x(:, f) = computeMipmap(wt, Fs, basisF0s(f), mipmapsPerOctave);
+                x(:, f) = computeMipmap(wt, Fs, oversample, basisF0s(f), mipmapsPerOctave);
             end
         else
             x = sourceWavetables{i};
@@ -126,7 +126,7 @@ function y = wavetable(Fs, duration, F0, varargin)
     phase = 1;
     % Create output placeholder.
     y = zeros(Fs * duration, 1);
-    
+     
     % Generate output.
     for n=1:Fs*duration
         % Calculate how far through the output we are.
@@ -195,4 +195,3 @@ function y = wavetable(Fs, duration, F0, varargin)
         y = decimate(y, oversample);
     end
 end
-
