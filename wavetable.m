@@ -41,6 +41,12 @@ function y = wavetable(Fs, duration, F0, varargin)
                         error('MipmapsPerOctave must be a positive integer or zero.');
                     end
                     mipmapsPerOctave = varargin{i + 1};
+                case 'WavetableLength'
+                    wtLength = log2(varargin{i + 1});
+                    if varargin{i + 1} < 1 || floor(wtLength) ~= wtLength
+                        error('WavetableLength must be a power of two, and greater than 2^0.');
+                    end
+                    Lt = varargin{i + 1};
             end
         end
     end
@@ -76,7 +82,7 @@ function y = wavetable(Fs, duration, F0, varargin)
 %                     sourceWavetables{n} = audio((n-1)*Lt + 1:n*Lt);
 %                 end
 
-                % Treat source audio as chunks of 256 samples, resampled to 2048
+                % Treat source audio as chunks of 256 samples, resampled to Lt-
                 % sample wavetables.
                 chunkLength = 2^8;
                 for n=1:floor(length(audio)/chunkLength)

@@ -36,5 +36,10 @@ applied, i.e. the same untreated wavetable will be used for all frequencies.
 `'Oversample'` (integer, `>= 1`) default `1`. If `1`, no oversampling will take
 place. NB, mipmaps will be calculated with respect to `Fs * Oversample`.
 
+`'WavetableLength'` (integer) default `2048`. Must be a power of two, greater
+than or equal to 2^1. Useful for comparing wavetable length vs. oversampling
+factor. Higher oversampling affects timbral characteristics for low frequency 
+wavetable reproduction, which can be mitigated by raising the wavetable length.
+
 ## Returns
 `y` (vector) the output signal.
