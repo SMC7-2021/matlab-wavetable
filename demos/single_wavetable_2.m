@@ -111,3 +111,5 @@ if strcmp(wtType, 'sine')
     % spectrogram( y_, 512, 64, 512, Fs, 'yaxis');
     freqz(y_);
 end
+
+tfPlot(y, Fs);

@@ -20,7 +20,7 @@ function y = wavetable(Fs, duration, F0, varargin)
                     oversample = varargin{i + 1};
                 case 'InterpolationType'
                     if ~ismember(varargin{i + 1}, ['truncate', 'linear', 'cubic', 'sinc'])
-                        error("InterpolationType must be one of 'truncate', 'linear', 'cubic', or 'sinc'.");
+                        error("InterpolationType must be one of 'zeroth', 'linear', 'cubic', or 'sinc'.");
                     end
                     interpolationType = varargin{i + 1};
                 case 'Wavetables'
@@ -121,11 +121,9 @@ function y = wavetable(Fs, duration, F0, varargin)
             end
         else
             x = sourceWavetables{i};
-            x = sincfilter(x,Fs,oversample,F0);
         end
 
         wavetables{i} = x;
-        
     end
 
     % Placeholder for the wavetable morph samples.

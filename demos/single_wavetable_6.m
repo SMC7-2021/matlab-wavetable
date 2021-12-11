@@ -6,14 +6,14 @@
 clear; close all;
 
 % Constants.
-% Wavetable type: 'sine', 'saw', or 'square'
+% Wavetable type: 'sine', 'saw', 'square' or 'sample'
 wtType = 'square';
 % Sampling rate.
 Fs = 44100;
 % Output frequency.
-F0 = 440;
+F0 = midi2hz(90);
 % Output duration.
-outDurationS = 2;
+outDurationS = .5;
 % Wavetable length.
 wtLength = 2^11;
 % Target samlping rate, required to reproduce requested F0.
@@ -24,8 +24,12 @@ targetWtLength = Fs / F0;
 % Anti-aliasing (low-pass) filter type: 'butter', 'cheby'
 aaFilterType = 'butter';
 % LPF params
-lpfCutoff = ((L * Fs) / M) * .4;
-lpfOrder = 5;
+% lpfCutoff = (L * Fs) / (2 * M);
+% Cutoff as a proportion of Fs * L...
+lpfCutoff = (1/M) * .5;
+% [lpfOrder, Wn] = buttord(lpfCutoff * .5, lpfCutoff, 3, 60);
+lpfOrder = 6;
+% lpfOrder = 5;
 % Max output samples to plot.
 maxOutPlot = 2^9;
 
@@ -38,20 +42,25 @@ figure1 = figure( ...
 % Create and plot the wavetable.
 switch(wtType)
     case 'sine'
-        wt = sin(linspace(0, 2 * pi, wtLength)');
+        wt = sin(linspace(0, (2*pi) - (2*pi)/wtLength, wtLength)');
     case 'saw'
         wt = linspace(-1, 1, wtLength)';
     case 'square'
-        wt = square(linspace(0, 2 * pi, wtLength)');
+        wt = square(linspace(0, (2*pi) - (2*pi)/wtLength, wtLength)');
+    case 'sample'
+        x = audioread('./wavetables/vox_wt.wav');
+        wt = resample(x, wtLength, length(x));
 end
 
 switch(aaFilterType)
     case 'butter'
-        [b, a] = butter(lpfOrder, lpfCutoff/(Fs/2), 'low');
+%         [b, a] = butter(lpfOrder, lpfCutoff/(Fs/2), 'low');
+        [b, a] = butter(lpfOrder, lpfCutoff, 'low');
     case 'cheby'
         % 'peak to peak passband ripple', dB
-        ripple = 3;
-        [b, a] = cheby1(lpfOrder, ripple, lpfCutoff/(Fs/2), 'low');
+        ripple = 1;
+%         [b, a] = cheby1(lpfOrder, ripple, lpfCutoff/(Fs/2), 'low');
+        [b, a] = cheby1(lpfOrder, ripple, lpfCutoff, 'low');
 end
 
 % Plot the original wavetable
@@ -70,7 +79,7 @@ subplot(522), ...
     title('Spectrum of original wavetable');
 
 % Upsample the wavetable
-wtUp = upsample(wt, L);
+wtUp = L * upsample(wt, L);
 FsUp = Fs*L;
 fUp = linspace(-FsUp/2 + 1, FsUp/2 - 1, FsUp)';
 wtUp1s = repmat(wtUp, ceil(FsUp/length(wtUp)), 1);
@@ -78,7 +87,7 @@ wtUp1s = wtUp1s(1:FsUp);
 subplot(523), ...
     plot(1:length(wtUp), wtUp), ...
     title('Upsampled wavetable'), ...
-    ylim([-1.1, 1.1]), ...
+%     ylim([-1.1, 1.1]), ...
     ylabel('amp.'), ...
     xlabel('sample index');
 subplot(524), ...
@@ -86,13 +95,17 @@ subplot(524), ...
     title('Spectrum of upsampled wavetable');
 
 % Filter the upsampled wavetable
-wtUpFlt = filter(b, a, wtUp);
+z = zeros(1, lpfOrder);
+wtUpFlt = wtUp;
+for i=1:3
+    [wtUpFlt, z] = filter(b, a, wtUpFlt, z);
+end
 wtUpFlt1s = repmat(wtUpFlt, ceil(FsUp/length(wtUpFlt)), 1);
 wtUpFlt1s = wtUpFlt1s(1:FsUp);
 subplot(525), ...
     plot(1:length(wtUpFlt), wtUpFlt), ...
     title('Filtered upsampled wavetable'), ...
-    ylim([-1.1, 1.1]), ...
+%     ylim([-1.1, 1.1]), ...
     ylabel('amp.'), ...
     xlabel('sample index');
 subplot(526), ...
@@ -107,13 +120,13 @@ wtDn1s = repmat(wtDn, ceil(FsDn/length(wtDn)), 1);
 wtDn1s = wtDn1s(1:FsDn);
 subplot(527), ...
     plot(1:length(wtDn), wtDn), ...
-    title('Filtered upsampled wavetable'), ...
-    ylim([-1.1, 1.1]), ...
+    title('Downsampled wavetable'), ...
+%     ylim([-1.1, 1.1]), ...
     ylabel('amp.'), ...
     xlabel('sample index');
 subplot(528), ...
     plot(fDn, abs(fftshift(fft(wtDn1s)))), ...
-    title('Spectrum of filtered upsampled wavetable');
+    title('Spectrum of downsampled wavetable');
 
 wtFinal = wtDn;
 
@@ -124,8 +137,8 @@ wtIndex = 0;
 
 % Repeatedly copy the wavetable to the output placeholder.
 for n=1:(Fs * outDurationS)
-    wtIndex = mod(wtIndex, length(wtFinal)) + 1;
-    y(n) = M/L * wtFinal(wtIndex);
+    wtIndex = mod(wtIndex, length(wtFinal)) + 1; 
+    y(n) = wtFinal(wtIndex);
 end
 
 soundsc(y, Fs);
@@ -134,11 +147,14 @@ figure(figure1);
 subplot(529), ...
     plot(linspace(0, maxOutPlot / Fs, maxOutPlot)', y(1:maxOutPlot)), ...
     title(sprintf('Output waveform (first %d samples)', maxOutPlot)), ...
-    ylim([-1.25, 1.25]), ...
+%     ylim([-1.25, 1.25]), ...
     ylabel('amp.'), ...
     xlabel('time (ms)');
 
 % Plot spectrogram
 subplot(5,2,10), ...
     spectrogram(y, 512, 64, 512, Fs, 'yaxis'), ...
-    ylim([0, 22]);
+    title('Spectrogram of output'), ...
+    ylim([0, 22.05]);
+
+tfPlot(y, Fs, .01);

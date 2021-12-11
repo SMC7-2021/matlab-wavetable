@@ -11,7 +11,7 @@ wtType = 'square';
 % Sample rate.
 Fs = 44100;
 % Output frequency.
-F0 = 532;
+F0 = 2532;
 % Output duration.
 outDurationS = 2;
 % Output buffer size.
@@ -138,23 +138,5 @@ subplot(313), ...
 %     % spectrogram( y_, 512, 64, 512, Fs, 'yaxis');
 %     freqz(y_);
 % end
-%%
 
-M_data = mean(y(1:maxOutPlot));
-RMS_data = rms(y(1:maxOutPlot));
-figure
-plot(linspace(0, maxOutPlot / Fs, maxOutPlot)', y(1:maxOutPlot))
-hold on
-plot(xlim, [1 1]*M_data, 'LineWidth',1.5)
-plot(xlim, [1 1]*RMS_data, 'LineWidth',1.5)
-hold off
-grid
-ylim([-1.5, 1.5]), ...
-xlabel('Time')
-ylabel('Amplitude')
-legend('Signal', 'Signal Mean', 'Signal RMS')
-%% 
-snr(y(1:maxOutPlot),Fs);
-
-%% 
-centroid = spectralCentroid(y(1:maxOutPlot),Fs)
+tfPlot(y, Fs);
