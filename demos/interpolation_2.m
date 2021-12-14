@@ -4,13 +4,13 @@ addpath('../helpers')
 % Sampling rate.
 Fs = 44100;
 % Output frequency.
-F0 = 4399;
+F0 = 440;
 
 % F0 = linspace(66, 2027, Fs * outDurationS)';
 % Output duration.
-outDurationS = 0.5;
+outDurationS = 0.01;
 % Wavetable length.
-wtLength = 2^11;
+wtLength = 2^7;
 % Target samlping rate, required to reproduce requested F0.
 targetFs = F0 * wtLength;
 targetWtLength = Fs / F0;
@@ -22,13 +22,13 @@ wt = sin(linspace(0, (2*pi) - (2*pi)/wtLength, wtLength)');
 % Calculate the number of samples per period of the wavetable to produce the
 % current frequency.
 sampsPerPeriod = Fs / F0;
-wtStepsPerSample = wtLength / sampsPerPeriod;
+wtStepsPerSample = 1.2;
 
 %% Drop-sample interpolation
 
-y = zeros(Fs * outDurationS, 1);
+y = zeros(wtLength, 1);
 readindex = 1;
-for n=1:Fs * outDurationS
+for n=1:wtLength
     
     y(n) = wt(readindex);
     readindex = mod(readindex + wtStepsPerSample, wtLength);
@@ -38,16 +38,16 @@ for n=1:Fs * outDurationS
     end
 
 end
-tfPlot(y, Fs, .005);
-figure; snr(y, Fs);
-figure; spectrogram(y, 512, 64, 512, Fs, 'yaxis');
+%tfPlot(y, Fs, .005);
+%figure; snr(y, Fs);
+%figure; spectrogram(y, 512, 64, 512, Fs, 'yaxis');
 
 %% linear interpolation 
-wtStepsPerSample = wtLength / sampsPerPeriod;
+%wtStepsPerSample = wtLength / sampsPerPeriod;
 readindex = 1;
-y2 = zeros(Fs * outDurationS, 1);
+y2 = zeros(wtLength, 1);
 
-for n=1:Fs * outDurationS
+for n=1:wtLength
 
     alphaNext = mod(readindex, 1);
     alphaPrev = 1 - alphaNext;
@@ -68,16 +68,16 @@ for n=1:Fs * outDurationS
     
 end
 
-tfPlot(y2, Fs, .005);
-figure; snr(y2, Fs);
-figure; spectrogram(y2, 512, 64, 512, Fs, 'yaxis');
+%tfPlot(y2, Fs, .005);
+%figure; snr(y2, Fs);
+%figure; spectrogram(y2, 512, 64, 512, Fs, 'yaxis');
 
 %% Cubic Lagrange
-wtStepsPerSample = wtLength / sampsPerPeriod;
+%wtStepsPerSample = wtLength / sampsPerPeriod;
 readindex = 1;
-y3 = zeros(Fs * outDurationS,1);
+y3 = zeros(wtLength,1);
 
-for n=1:Fs * outDurationS
+for n=1:wtLength
     % Get the indices of the samples we need from the wavetable.
     % Start by getting the index of the ith sample.
     i = floor(readindex);
@@ -117,6 +117,17 @@ for n=1:Fs * outDurationS
     
 end
 % snr(sin(2*pi*440*linspace(0,outDurationS,Fs*outDurationS)));
-tfPlot(y3, Fs, .005);
-figure; snr(y3, Fs);
-figure; spectrogram(y3, 512, 64, 512, Fs, 'yaxis');
+%tfPlot(y3, Fs, .005);
+%figure; snr(y3, Fs);
+%figure; spectrogram(y3, 512, 64, 512, Fs, 'yaxis');
+
+%%
+figure
+hold on
+stem(wt)
+plot(y)
+plot(y2)
+plot(y3)
+legend('Original Wavetable', 'Drop-Zero','Linear','Cubic')
+grid on
+set(gcf, 'color', 'w');    
