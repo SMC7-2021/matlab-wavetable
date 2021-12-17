@@ -24,14 +24,9 @@ specCentroid = mean(spectralCentroid(x,Fs));
 rmsValues = rms(x);
 snrValues = snr(x, Fs, round(Fs/2/f0));
 
-%fileN = sprintf('./SotaPlots/tfPlot abletonArbitaryC6 SOTA.jpg');
-%fileN2 = sprintf()
-%exportgraphics(f1,fileN, 'Resolution','400');
-sound(x,Fs);
-
-%NO! if you're still in doubt about applying f0- not for sota
-%TODO: for a fourier square, perhaps...
-%f0 = [440, 1046.5, 4086];
-%for f=1:length(f0)
+% for saving plots
+% fileName = sprintf('./SotaPlots/tfPlot abletonArbitaryC6 SOTA.jpg');
+% exportgraphics(f1,fileName, 'Resolution','400');
+% sound(x,Fs);
     
     

@@ -7,11 +7,11 @@ addpath('./wavetables');
 
 clear, close all;
 
-doPlots = false;            %!!!BEFORE RUNNING, PLEASE CONSIDER DOING SOME CLEANING!!!
+doPlots = false;
+savePlots = false;
 
 Fs = 44100;
 dur = 1;
-f0 = 440; %c6 = 1046.5
 
 f0vector = [27.5, 440, 1046.5, 4186.01];
 intTypes = {'truncate', 'linear', 'cubic', 'sinc'};
@@ -33,7 +33,7 @@ rmsValues = zeros(N, 1);
 snrValues = zeros(N, 1);
 
 %loop for running f0 through variables:
-%   1 - wavetable Type: i = 1:4
+%   1 - interpolation: i = 1:4
 %   2 - MipmapsPerOctave: (n = 1:N)-1
 
 for n=1:N
@@ -56,22 +56,13 @@ for n=1:N
             
             %save the plots
             
-%             if i == 3
-%                 fileName = sprintf('./plots/Figure wavetable %s, Mipmaps%d.jpg', "arbitrary", n-1);
-%                 file2Name = sprintf('./plots/tfPlot wavetable %s, Mipmaps%d.jpg', "arbitrary", n-1);
-%             else
-                
-%                 fileName = sprintf('./plots/SNR wavetable %s, Mipmaps%d.jpg', waveTypes{i}, n-1);
-%                 file2Name = sprintf('./plots/tfPlot wavetable %s, Mipmaps%d.jpg', waveTypes{i}, n-1);
+            if savePlots
+                fileName = sprintf('./plots/SNR wt %s interpolation, Mipmaps%d.jpg', intTypes{i}, n-1);
+                file2Name = sprintf('./plots/tfPlot wt %s interpolation, Mipmaps%d.jpg', intTypesTypes{i}, n-1);
             
-            %fileName = sprintf('./plots/SNR oversample factor %d, mipmaps %d.jpg', i, n-1);
-            %file2Name = sprintf('./plots/tfPlot oversample factor %d, mipmaps %d.jpg', i, n-1);
-                
-            %end
-            
-            %exportgraphics(f1,fileName, 'Resolution','400');
-            %exportgraphics(f2,file2Name, 'Resolution','400');
-            
+                exportgraphics(f1,fileName, 'Resolution','400');
+                exportgraphics(f2,file2Name, 'Resolution','400');
+            end
         end
     end
 end
